@@ -28,7 +28,7 @@ function page_start($opts = []) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title><?= e($title) ?> - <?= e(site_name()) ?></title>
 <meta name="description" content="<?= e(site_name()) ?> - 在线高清影视播放">
-<link rel="stylesheet" href="assets/css/style.css?v=1.0">
+<link rel="stylesheet" href="assets/css/style.css?v=1.2">
 <style>:root{--accent:<?= e(theme_color()) ?>;}</style>
 </head>
 <body>
@@ -125,7 +125,7 @@ window.JAY = {
     needLoginMsg: '需要登录才可以观看哦，如没有账号请注册！'
 };
 </script>
-<script src="assets/js/main.js?v=1.0"></script>
+<script src="assets/js/main.js?v=1.2"></script>
 </body>
 </html>
 <?php }

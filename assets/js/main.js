@@ -113,8 +113,15 @@
         });
     }
 
+    /* ---------------- 季下拉模块：点击其他区域自动收起（体验优化，非功能依赖） ---------------- */
+    document.addEventListener('click', function (e) {
+        $$('details.season-drop[open]').forEach(function (d) {
+            if (!d.contains(e.target)) d.removeAttribute('open');
+        });
+    });
+
     /* ---------------- 详情页：收藏 ---------------- */
-    /* 季切换与音轨切换已改为纯链接（<a href>），不依赖 JS */
+    /* 季切换/音轨/播放源均为纯链接（<a href>）+ 原生 details，不依赖 JS */
 
     var favBtn = $('#favBtn');
     if (favBtn) {

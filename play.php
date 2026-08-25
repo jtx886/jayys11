@@ -188,12 +188,21 @@ page_start(['title' => $zhTitle . ($m === 'tv' ? ' ' . $epName : ''), 'full_widt
         </div>
         <?php endif; ?>
         <?php if ($seasonCount > 1): ?>
-        <div class="season-chips" style="margin-bottom:14px">
-            <?php for ($s = 1; $s <= $seasonCount; $s++): ?>
-            <a class="schip <?= $s === $season ? 'on' : '' ?>"
-               href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $s ?>&e=1<?= $overseas ? '&track=' . $track : '' ?><?= $srcQ ?>">第 <?= $s ?> 季</a>
-            <?php endfor; ?>
-        </div>
+        <details class="season-drop" style="margin-bottom:14px">
+            <summary>
+                <span class="sd-label">选择季</span>
+                <b class="sd-cur">第 <?= $season ?> 季</b>
+                <i class="i i-caret-d"></i>
+            </summary>
+            <div class="sd-menu">
+                <?php for ($s = 1; $s <= $seasonCount; $s++): ?>
+                <a class="<?= $s === $season ? 'on' : '' ?>"
+                   href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $s ?>&e=1<?= $overseas ? '&track=' . $track : '' ?><?= $srcQ ?>">
+                    <b>第 <?= $s ?> 季</b><span></span>
+                </a>
+                <?php endfor; ?>
+            </div>
+        </details>
         <?php endif; ?>
         <div class="play-eps">
             <?php

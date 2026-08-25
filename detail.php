@@ -161,15 +161,26 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
             </div>
         </div>
 
-        <?php if ($type === 'tv' && $seasons): ?>
+        <?php if ($type === 'tv' && (count($seasons) > 1 || $multiSource || $overseas)): ?>
         <div class="season-bar">
-            <div class="sel-label">选择季</div>
-            <div class="season-chips">
-                <?php foreach ($seasons as $s): $sn = (int)$s['season_number']; ?>
-                <a class="schip <?= $sn === $seasonNo ? 'on' : '' ?>"
-                   href="detail.php?type=tv&id=<?= $id ?>&season=<?= $sn ?><?= $track !== '' ? '&track=' . $track : '' ?><?= $srcQ ?>">第 <?= $sn ?> 季<?= !empty($s['air_date']) ? '·' . substr($s['air_date'], 0, 4) : '' ?></a>
-                <?php endforeach; ?>
-            </div>
+            <?php if (count($seasons) > 1): ?>
+            <details class="season-drop">
+                <summary>
+                    <span class="sd-label">选择季</span>
+                    <b class="sd-cur">第 <?= $seasonNo ?> 季<?= $seasonYear ? ' · ' . e($seasonYear) : '' ?></b>
+                    <i class="i i-caret-d"></i>
+                </summary>
+                <div class="sd-menu">
+                    <?php foreach ($seasons as $s): $sn = (int)$s['season_number']; ?>
+                    <a class="<?= $sn === $seasonNo ? 'on' : '' ?>"
+                       href="detail.php?type=tv&id=<?= $id ?>&season=<?= $sn ?><?= $track !== '' ? '&track=' . $track : '' ?><?= $srcQ ?>">
+                        <b>第 <?= $sn ?> 季</b>
+                        <span><?= !empty($s['air_date']) ? e(substr($s['air_date'], 0, 4)) : '' ?></span>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+            </details>
+            <?php endif; ?>
             <?php if ($multiSource): ?>
             <div class="track-wrap" style="margin:0">
                 <span class="track-label">播放源</span>
