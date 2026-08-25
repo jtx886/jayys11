@@ -99,7 +99,7 @@ page_start(['active' => 'feedback', 'title' => '反馈中心']);
             <div class="fb-content"><?= e($f['content']) ?></div>
             <div class="fb-foot">
                 <button class="fb-act fb-like <?= isset($likedIds[(int)$f['id']]) ? 'liked' : '' ?>" data-id="<?= (int)$f['id'] ?>">
-                    <i class="i i-heart"></i><span>赞</span><span><?= (int)$f['like_count'] ?></span>
+                    <i class="i i-thumb"></i><span>赞</span><span><?= (int)$f['like_count'] ?></span>
                 </button>
                 <span class="fb-act" style="cursor:default"><i class="i i-edit"></i><span>回复</span><span><?= (int)$f['reply_count'] ?></span></span>
             </div>

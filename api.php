@@ -10,7 +10,28 @@ $action = $_POST['action'] ?? ($_GET['action'] ?? '');
 
 function out($data) { echo json_encode($data, JSON_UNESCAPED_UNICODE); exit; }
 
-/* ---------- 游客仅可访问的接口 ---------- */
+/* ---------- 游客可访问的接口 ---------- */
+
+/* 注册验证码（游客发送，无需登录） */
+if ($action === 'send_code') {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(['ok' => false, 'msg' => '请求方式错误']);
+    csrf_check();
+    $email = post_val('email');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) out(['ok' => false, 'msg' => '邮箱格式不正确']);
+    if (db_one("SELECT id FROM users WHERE email = ?", [$email])) out(['ok' => false, 'msg' => '该邮箱已被注册，请直接登录']);
+    // 频率限制 60 秒
+    $last = db_one("SELECT created_at FROM email_codes WHERE email = ? ORDER BY id DESC LIMIT 1", [$email]);
+    if ($last && time() - strtotime($last['created_at']) < 60) {
+        out(['ok' => false, 'msg' => '发送过于频繁，请 60 秒后重试']);
+    }
+    $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+    db_query("INSERT INTO email_codes (email, code, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))", [$email, $code]);
+    list($ok, $err) = send_mail($email, $email, 'Jay影视 注册验证码', mail_template_code($code));
+    if ($ok) out(['ok' => true, 'msg' => '验证码已发送']);
+    out(['ok' => false, 'msg' => '邮件发送失败：' . $err]);
+}
+
+/* 反馈回复列表（公开浏览） */
 if ($action === 'get_replies') {
     $fid = (int)($_GET['id'] ?? 0);
     if ($fid <= 0) out(['ok' => false, 'msg' => '参数错误']);
@@ -37,28 +58,11 @@ if ($action === 'get_replies') {
 $user = current_user();
 if (!$user) out(['ok' => false, 'need_login' => true, 'msg' => '需要登录才可以观看哦，如没有账号请注册！']);
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !in_array($action, ['send_code'], true)) {
-    csrf_check();
-}
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(['ok' => false, 'msg' => '请求方式错误']);
+csrf_check();
 
 switch ($action) {
 
-    /* 注册验证码 */
-    case 'send_code': {
-        $email = post_val('email');
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) out(['ok' => false, 'msg' => '邮箱格式不正确']);
-        if (db_one("SELECT id FROM users WHERE email = ?", [$email])) out(['ok' => false, 'msg' => '该邮箱已被注册，请直接登录']);
-        // 频率限制 60 秒
-        $last = db_one("SELECT created_at FROM email_codes WHERE email = ? ORDER BY id DESC LIMIT 1", [$email]);
-        if ($last && time() - strtotime($last['created_at']) < 60) {
-            out(['ok' => false, 'msg' => '发送过于频繁，请 60 秒后重试']);
-        }
-        $code = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        db_query("INSERT INTO email_codes (email, code, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE))", [$email, $code]);
-        list($ok, $err) = send_mail($email, $email, 'Jay影视 注册验证码', mail_template_code($code));
-        if ($ok) out(['ok' => true, 'msg' => '验证码已发送']);
-        out(['ok' => false, 'msg' => '邮件发送失败：' . $err]);
-    }
 
     /* 收藏切换 */
     case 'toggle_favorite': {

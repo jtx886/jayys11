@@ -16,7 +16,8 @@ if (!$user) {
 
 $m     = get_val('m', 'movie') === 'tv' ? 'tv' : 'movie';
 $tmdbId = (int)get_val('t', 0);
-$season = max(1, (int)get_val('s', 1));
+// 季参数兼容：季选择器传 season，剧集链接传 s
+$season = max(1, (int)(get_val('season', '') !== '' ? get_val('season') : get_val('s', 1)));
 $ep     = max(1, (int)get_val('e', 1));
 $track  = get_val('track', 'orig') === 'dub' ? 'dub' : 'orig';
 

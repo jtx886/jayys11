@@ -55,10 +55,16 @@ img{display:block;max-width:100%}
 .i-search::after{content:'';position:absolute;right:-.26em;bottom:-.18em;width:.42em;height:.11em;background:currentColor;border-radius:.1em;transform:rotate(45deg)}
 .i-user::before{content:'';position:absolute;top:.04em;left:50%;transform:translateX(-50%);width:.4em;height:.4em;border-radius:50%;background:currentColor}
 .i-user::after{content:'';position:absolute;bottom:.02em;left:50%;transform:translateX(-50%);width:.82em;height:.44em;border-radius:.42em .42em 0 0;background:currentColor}
-.i-heart{width:.94em;height:.88em}
-.i-heart::before,.i-heart::after{content:'';position:absolute;top:.12em;width:.5em;height:.78em;background:currentColor;border-radius:.5em .5em 0 0}
-.i-heart::before{left:.06em;transform:rotate(-45deg);transform-origin:0 100%}
-.i-heart::after{right:.06em;transform:rotate(45deg);transform-origin:100% 100%}
+/* 爱心（收藏）：双圆角矩形旋转拼接，底部收于一点 */
+.i-heart{width:.9em;height:.82em}
+.i-heart::before,.i-heart::after{content:'';position:absolute;top:.06em;width:.45em;height:.68em;background:currentColor;border-radius:.45em .45em 0 0}
+.i-heart::before{left:.45em;transform:rotate(-45deg);transform-origin:0 100%}
+.i-heart::after{left:0;transform:rotate(45deg);transform-origin:100% 100%}
+/* 大拇指（点赞）：clip-path 拳部 + 手腕 */
+.i-thumb{width:.98em;height:.98em}
+.i-thumb::before{content:'';position:absolute;inset:0;background:currentColor;
+  clip-path:polygon(29% 37.5%,58% 4%,75% 4%,75% 21%,87.5% 21%,96% 33%,96% 79%,87.5% 87.5%,37.5% 87.5%,29% 79%)}
+.i-thumb::after{content:'';position:absolute;left:4%;top:37.5%;width:17%;height:50%;background:currentColor;border-radius:.05em 0 0 .05em}
 .i-star{background:currentColor;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
 .i-grid{background:
   linear-gradient(currentColor,currentColor) 0 0/40% 40% no-repeat,
@@ -437,7 +443,8 @@ img{display:block;max-width:100%}
 .fb-act{display:inline-flex;align-items:center;gap:7px;color:var(--mut);font-size:13px;cursor:pointer;transition:var(--t);background:none;border:none;font-family:inherit;padding:5px 8px;border-radius:8px}
 .fb-act:hover{color:var(--accent);background:var(--accent-soft)}
 .fb-act.liked{color:var(--accent)}
-.fb-act.liked .i-heart::before,.fb-act.liked .i-heart::after{background:var(--accent)}
+.fb-act.liked .i-thumb{animation:thumbPop .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes thumbPop{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
 .fb-act .i{font-size:16px}
 .badge-dev{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#ff2d2d,#ff5a3c);color:#fff;font-size:10.5px;font-weight:700;
   padding:2px 8px;border-radius:6px;letter-spacing:1px;box-shadow:0 3px 10px rgba(255,45,45,.35);vertical-align:middle;animation:devGlow 2.6s ease infinite}

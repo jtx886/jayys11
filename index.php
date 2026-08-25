@@ -29,10 +29,12 @@ if (!tmdb_ready()) {
     // 未配置 TMDB Key
 } elseif ($cat !== '') {
     $data = tmdb_category($cat, $page);
+    // anime/variety 走 /discover/tv，结果无 media_type 字段，按分类归一化为 tv
+    $baseType = ($cat === 'movie') ? 'movie' : 'tv';
     $items = [];
     if (!empty($data['results'])) {
         foreach ($data['results'] as $it) {
-            $type = isset($it['media_type']) && $it['media_type'] !== '' ? $it['media_type'] : $cat;
+            $type = isset($it['media_type']) && $it['media_type'] !== '' ? $it['media_type'] : $baseType;
             if ($type !== 'movie' && $type !== 'tv') continue;
             $items[] = tmdb_normalize_item($it, $type === 'movie' ? 'movie' : 'tv');
         }

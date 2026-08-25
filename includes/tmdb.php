@@ -33,6 +33,8 @@ function tmdb_get($path, $params = [], $cacheSeconds = 1800) {
 
     $data = http_get_json($url, 12);
     if ($data === null) return null;
+    // TMDB 错误响应（无效key/资源不存在等）不缓存、当失败处理
+    if (isset($data['status_code'], $data['status_message'])) return null;
     if ($cacheSeconds > 0) cache_set($cacheKey, $data, $cacheSeconds);
     return $data;
 }
