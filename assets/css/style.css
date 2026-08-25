@@ -342,7 +342,7 @@ img{display:block;max-width:100%}
 
 /* ================= 详情页 ================= */
 .det-head{position:relative;margin-top:-64px;padding-top:64px}
-.det-bg{position:absolute;inset:0;background-size:cover;background-position:center 20%;opacity:.32;filter:blur(0px)}
+.det-bg{position:absolute;inset:0;background-size:cover;background-position:center 20%;opacity:.32;filter:blur(0px);pointer-events:none}
 .det-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,14,20,.35),var(--bg) 88%)}
 .det-in{position:relative;display:flex;gap:34px;padding-top:38px}
 .det-poster{width:250px;flex:none;border-radius:16px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--bd2);animation:fadeUp .5s ease both}
@@ -381,7 +381,7 @@ img{display:block;max-width:100%}
 .seg-item.on.src-auto{background:linear-gradient(135deg,#2ecc97,#5fe3b8);box-shadow:0 4px 14px rgba(46,204,151,.35)}
 .track-wrap{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .track-label{color:var(--mut);font-size:13px;display:flex;align-items:center;gap:6px}
-.season-bar{display:flex;align-items:center;gap:14px;margin:26px 0 18px;flex-wrap:wrap}
+.season-bar{display:flex;align-items:center;gap:14px;margin:26px 0 18px;flex-wrap:wrap;position:relative;z-index:1}
 .season-bar .sel-label{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700}
 .season-bar .sel-label .i{color:var(--accent)}
 /* 季选择：展开式下拉模块（HTML 原生 details，无需 JS） */
