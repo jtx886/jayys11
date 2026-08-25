@@ -17,6 +17,12 @@ function get_default_source() {
     return db_one("SELECT * FROM play_sources ORDER BY id ASC LIMIT 1");
 }
 
+/** 按 ID 获取播放源 */
+function get_source_by_id($id) {
+    if ((int)$id <= 0) return null;
+    return db_one("SELECT * FROM play_sources WHERE id = ?", [(int)$id]);
+}
+
 /* ---------------- 名称工具 ---------------- */
 
 /** 名称标准化：去空格/标点，转小写 */
@@ -284,11 +290,26 @@ function source_resolve_media($apiUrl, $type, $zhTitle, $origTitle, $year, $seas
 }
 
 /**
- * 遍历全部播放源解析（默认源优先）
+ * 遍历播放源解析（可指定优先源）
+ * $preferredSourceId > 0 时该源最先尝试，失败按"默认源→备用源"顺序自动降级
  * 返回 [resolveResult, sourceRow|null]
  */
-function resolve_with_sources($type, $zhTitle, $origTitle, $year, $season = 1) {
+function resolve_with_sources($type, $zhTitle, $origTitle, $year, $season = 1, $preferredSourceId = 0) {
     $sources = get_all_sources();
+    $preferredSourceId = (int)$preferredSourceId;
+
+    // 指定源排到最前，其余保持"默认源优先"顺序
+    if ($preferredSourceId > 0) {
+        $ordered = [];
+        foreach ($sources as $s) {
+            if ((int)$s['id'] === $preferredSourceId) $ordered[] = $s;
+        }
+        foreach ($sources as $s) {
+            if ((int)$s['id'] !== $preferredSourceId) $ordered[] = $s;
+        }
+        $sources = $ordered;
+    }
+
     $last = null;
     foreach ($sources as $s) {
         $res = source_resolve_media($s['api_url'], $type, $zhTitle, $origTitle, $year, $season);
@@ -302,12 +323,29 @@ function resolve_with_sources($type, $zhTitle, $origTitle, $year, $season = 1) {
 /**
  * 解析最终播放直链
  * $type movie|tv, $track orig|dub, $ep 集数(tv)
- * 返回 ['ok'=>bool,'url'=>m3u8,'entry'=>名称,'fallback'=>bool,'msg'=>]
+ * $preferredSourceId 指定优先播放源（0=自动，默认源优先）
+ * 返回 ['ok'=>bool,'url'=>m3u8,'entry'=>名称,'fallback'=>bool,'msg'=>,
+ *       'source_id'=>实际使用源ID,'source_name'=>实际使用源名,
+ *       'source_switched'=>是否发生源自动切换,'preferred_name'=>用户指定的源名]
  */
-function resolve_play_url($type, $zhTitle, $origTitle, $year, $season, $ep, $track) {
-    list($res, $source) = resolve_with_sources($type, $zhTitle, $origTitle, $year, $season);
+function resolve_play_url($type, $zhTitle, $origTitle, $year, $season, $ep, $track, $preferredSourceId = 0) {
+    $preferredSourceId = (int)$preferredSourceId;
+    $preferredName = '';
+    if ($preferredSourceId > 0) {
+        $ps = get_source_by_id($preferredSourceId);
+        if ($ps) $preferredName = $ps['name'];
+        else $preferredSourceId = 0; // 无效源 ID 回退自动
+    }
+
+    list($res, $source) = resolve_with_sources($type, $zhTitle, $origTitle, $year, $season, $preferredSourceId);
+    $sourceId = $source ? (int)$source['id'] : 0;
+    $sourceName = $source ? $source['name'] : '';
+    $switched = ($preferredSourceId > 0 && $sourceId !== $preferredSourceId);
+
     if (empty($res['found'])) {
-        return ['ok' => false, 'url' => '', 'entry' => '', 'fallback' => false, 'msg' => $res['msg']];
+        return ['ok' => false, 'url' => '', 'entry' => '', 'fallback' => false, 'msg' => $res['msg'],
+                'source_id' => $sourceId, 'source_name' => $sourceName,
+                'source_switched' => false, 'preferred_name' => $preferredName];
     }
 
     $group = ($track === 'dub' && !empty($res['dub'])) ? $res['dub'] : $res['orig'];
@@ -325,7 +363,11 @@ function resolve_play_url($type, $zhTitle, $origTitle, $year, $season, $ep, $tra
     }
 
     if (!$item) {
-        return ['ok' => false, 'url' => '', 'entry' => $group['name'], 'fallback' => false, 'msg' => '未找到对应集数资源'];
+        return ['ok' => false, 'url' => '', 'entry' => $group['name'], 'fallback' => false, 'msg' => '未找到对应集数资源',
+                'source_id' => $sourceId, 'source_name' => $sourceName,
+                'source_switched' => false, 'preferred_name' => $preferredName];
     }
-    return ['ok' => true, 'url' => $item['url'], 'entry' => $group['name'], 'fallback' => $fallback, 'msg' => ''];
+    return ['ok' => true, 'url' => $item['url'], 'entry' => $group['name'], 'fallback' => $fallback, 'msg' => '',
+            'source_id' => $sourceId, 'source_name' => $sourceName,
+            'source_switched' => $switched, 'preferred_name' => $preferredName];
 }

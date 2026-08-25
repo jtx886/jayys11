@@ -92,6 +92,18 @@ if (!empty($detail['genres'])) {
 
 $basePlayUrl = 'play.php?m=' . $type . '&t=' . $id;
 
+/* 播放源选择（后台配置 ≥2 个时开放选择，src=0 表示自动优选） */
+$sources = get_all_sources();
+$srcSel = (int)get_val('src', 0);
+if ($srcSel > 0) {
+    $srcOk = false;
+    foreach ($sources as $s) if ((int)$s['id'] === $srcSel) $srcOk = true;
+    if (!$srcOk) $srcSel = 0; // 无效源回退自动
+}
+$multiSource = count($sources) >= 2;
+$srcQ = $multiSource ? '&src=' . $srcSel : '';
+$srcBase = 'detail.php?type=' . $type . '&id=' . $id . ($type === 'tv' ? '&season=' . $seasonNo : '') . ($track !== '' ? '&track=' . $track : '');
+
 page_start(['title' => $zhTitle, 'full_width' => false]);
 ?>
 
@@ -139,7 +151,7 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
                 <?php endif; ?>
 
                 <div class="det-actions">
-                    <?php $playHref = $basePlayUrl . ($type === 'tv' ? '&s=' . $seasonNo . '&e=1' : '') . ($track !== '' ? '&track=' . $track : ''); ?>
+                    <?php $playHref = $basePlayUrl . ($type === 'tv' ? '&s=' . $seasonNo . '&e=1' : '') . ($track !== '' ? '&track=' . $track : '') . $srcQ; ?>
                     <a class="btn btn-primary btn-lg" data-play-link href="<?= e($playHref) ?>" <?= is_login() ? '' : 'data-need-login' ?>><i class="i i-play"></i><?= $type === 'movie' ? '立即播放' : '播放第 1 集' ?></a>
                     <button class="btn <?= $faved ? 'btn-primary' : 'btn-ghost' ?> btn-lg" id="favBtn"
                             data-type="<?= e($type) ?>" data-id="<?= $id ?>" data-title="<?= e($zhTitle) ?>" data-poster="<?= e($poster) ?>">
@@ -155,15 +167,26 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
             <div class="season-chips">
                 <?php foreach ($seasons as $s): $sn = (int)$s['season_number']; ?>
                 <a class="schip <?= $sn === $seasonNo ? 'on' : '' ?>"
-                   href="detail.php?type=tv&id=<?= $id ?>&season=<?= $sn ?><?= $track !== '' ? '&track=' . $track : '' ?>">第 <?= $sn ?> 季<?= !empty($s['air_date']) ? '·' . substr($s['air_date'], 0, 4) : '' ?></a>
+                   href="detail.php?type=tv&id=<?= $id ?>&season=<?= $sn ?><?= $track !== '' ? '&track=' . $track : '' ?><?= $srcQ ?>">第 <?= $sn ?> 季<?= !empty($s['air_date']) ? '·' . substr($s['air_date'], 0, 4) : '' ?></a>
                 <?php endforeach; ?>
             </div>
+            <?php if ($multiSource): ?>
+            <div class="track-wrap" style="margin:0">
+                <span class="track-label"><i class="i i-film"></i>播放源</span>
+                <div class="seg">
+                    <a class="seg-item src-auto <?= $srcSel === 0 ? 'on' : '' ?>" href="<?= e($srcBase) ?>&src=0">自动</a>
+                    <?php foreach ($sources as $s): ?>
+                    <a class="seg-item <?= $srcSel === (int)$s['id'] ? 'on' : '' ?>" href="<?= e($srcBase) ?>&src=<?= (int)$s['id'] ?>"><?= e($s['name']) ?></a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
             <?php if ($overseas): ?>
             <div class="track-wrap" style="margin:0 0 0 auto">
                 <span class="track-label"><i class="i i-film"></i>音轨</span>
                 <div class="seg">
-                    <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="detail.php?type=tv&id=<?= $id ?>&season=<?= $seasonNo ?>&track=orig">原版</a>
-                    <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="detail.php?type=tv&id=<?= $id ?>&season=<?= $seasonNo ?>&track=dub">普通话</a>
+                    <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="detail.php?type=tv&id=<?= $id ?>&season=<?= $seasonNo ?>&track=orig<?= $srcQ ?>">原版</a>
+                    <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="detail.php?type=tv&id=<?= $id ?>&season=<?= $seasonNo ?>&track=dub<?= $srcQ ?>">普通话</a>
                 </div>
             </div>
             <?php endif; ?>
@@ -184,7 +207,7 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
                 $epIdx++;
                 $epNo = (int)($ep['episode_number'] ?: $epIdx);
                 $still = tmdb_img($ep['still_path'] ?? '', 'w300');
-                $epHref = $basePlayUrl . '&s=' . $seasonNo . '&e=' . $epNo . ($track !== '' ? '&track=' . $track : '');
+                $epHref = $basePlayUrl . '&s=' . $seasonNo . '&e=' . $epNo . ($track !== '' ? '&track=' . $track : '') . $srcQ;
                 $hist = isset($history[$epNo]) ? $history[$epNo] : null;
             ?>
             <a class="ep-card fade-in <?= $epIdx > 6 ? 'd' . min(4, (int)(($epIdx - 1) / 6)) : '' ?>" href="<?= e($epHref) ?>" <?= is_login() ? '' : 'data-need-login' ?>>
@@ -213,15 +236,28 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
             <div class="empty" style="grid-column:1/-1"><i class="i i-tv"></i><h3>本季暂无剧集数据</h3><p>TMDB 收录信息可能不完整</p></div>
             <?php endif; ?>
         </div>
-        <?php elseif ($type === 'movie' && $overseas): ?>
+        <?php elseif ($type === 'movie' && ($overseas || $multiSource)): ?>
         <div class="season-bar">
+            <?php if ($overseas): ?>
             <div class="track-wrap" style="margin:0">
                 <span class="track-label"><i class="i i-film"></i>音轨选择</span>
                 <div class="seg">
-                    <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="detail.php?type=movie&id=<?= $id ?>&track=orig">原版（中文字幕）</a>
-                    <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="detail.php?type=movie&id=<?= $id ?>&track=dub">普通话配音</a>
+                    <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="detail.php?type=movie&id=<?= $id ?>&track=orig<?= $srcQ ?>">原版（中文字幕）</a>
+                    <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="detail.php?type=movie&id=<?= $id ?>&track=dub<?= $srcQ ?>">普通话配音</a>
                 </div>
             </div>
+            <?php endif; ?>
+            <?php if ($multiSource): ?>
+            <div class="track-wrap" style="margin:<?= $overseas ? '0 0 0 auto' : '0' ?>">
+                <span class="track-label"><i class="i i-film"></i>播放源</span>
+                <div class="seg">
+                    <a class="seg-item src-auto <?= $srcSel === 0 ? 'on' : '' ?>" href="<?= e($srcBase) ?>&src=0">自动</a>
+                    <?php foreach ($sources as $s): ?>
+                    <a class="seg-item <?= $srcSel === (int)$s['id'] ? 'on' : '' ?>" href="<?= e($srcBase) ?>&src=<?= (int)$s['id'] ?>"><?= e($s['name']) ?></a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 

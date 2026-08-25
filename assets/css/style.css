@@ -378,6 +378,7 @@ img{display:block;max-width:100%}
 .seg-item:hover{color:var(--tx)}
 .seg-item.on{background:linear-gradient(135deg,var(--accent),rgba(255,255,255,.25)),var(--accent);background-blend-mode:overlay;color:#fff;font-weight:600;box-shadow:0 4px 14px rgba(229,9,20,.35)}
 .seg-item.on.audio-orig{background:linear-gradient(135deg,#3861fb,#6fa0ff);box-shadow:0 4px 14px rgba(56,97,251,.35)}
+.seg-item.on.src-auto{background:linear-gradient(135deg,#2ecc97,#5fe3b8);box-shadow:0 4px 14px rgba(46,204,151,.35)}
 .track-wrap{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .track-label{color:var(--mut);font-size:13px;display:flex;align-items:center;gap:6px}
 .season-bar{display:flex;align-items:center;gap:14px;margin:26px 0 18px;flex-wrap:wrap}

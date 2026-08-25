@@ -21,6 +21,17 @@ $season = max(1, (int)(get_val('season', '') !== '' ? get_val('season') : get_va
 $ep     = max(1, (int)get_val('e', 1));
 $track  = get_val('track', 'orig') === 'dub' ? 'dub' : 'orig';
 
+/* 播放源选择（src=0 自动优选，>0 指定源优先，失败自动降级备用源） */
+$sources = get_all_sources();
+$srcSel = (int)get_val('src', 0);
+if ($srcSel > 0) {
+    $srcOk = false;
+    foreach ($sources as $s) if ((int)$s['id'] === $srcSel) $srcOk = true;
+    if (!$srcOk) $srcSel = 0; // 无效源回退自动
+}
+$multiSource = count($sources) >= 2;
+$srcQ = $multiSource ? '&src=' . $srcSel : '';
+
 if ($tmdbId <= 0) redirect('index.php');
 
 /* ---------- TMDB 信息 ---------- */
@@ -60,8 +71,8 @@ if ($m === 'tv') {
 }
 if ($epName === '') $epName = '第 ' . $ep . ' 集';
 
-/* ---------- 解析真实播放直链 ---------- */
-$resolve = resolve_play_url($m, $zhTitle, $origTitle, $m === 'tv' ? $seasonYear : substr($date, 0, 4), $season, $ep, $overseas ? $track : 'orig');
+/* ---------- 解析真实播放直链（指定源优先，无资源自动降级备用源） ---------- */
+$resolve = resolve_play_url($m, $zhTitle, $origTitle, $m === 'tv' ? $seasonYear : substr($date, 0, 4), $season, $ep, $overseas ? $track : 'orig', $srcSel);
 
 $playerUrl = '';
 if ($resolve['ok']) {
@@ -101,21 +112,21 @@ page_start(['title' => $zhTitle . ($m === 'tv' ? ' ' . $epName : ''), 'full_widt
     <div class="play-head">
         <div>
             <div class="play-title">
-                <a href="detail.php?type=<?= $m ?>&id=<?= $tmdbId ?>" style="color:inherit"><?= e($zhTitle) ?></a>
+                <a href="detail.php?type=<?= $m ?>&id=<?= $tmdbId ?><?= $srcQ ?>" style="color:inherit"><?= e($zhTitle) ?></a>
                 <?php if ($m === 'tv'): ?><span class="chip">S<?= $season ?>E<?= $ep ?></span><span class="chip"><?= e($epName) ?></span><?php endif; ?>
                 <?php if ($rating > 0): ?><span class="chip rate"><i class="i i-star"></i><?= $rating ?></span><?php endif; ?>
             </div>
             <div class="play-sub">
                 <span>已观看 <b id="watchPos" style="color:var(--gold)"><?= format_seconds($savedPos) ?></b></span>
-                <?php if ($resolve['ok']): ?><span class="play-status"><span class="dot"></span>片源：<?= e($resolve['entry']) ?></span><?php endif; ?>
+                <?php if ($resolve['ok']): ?><span class="play-status"><span class="dot"></span>片源：<?= e($resolve['source_name'] !== '' ? $resolve['source_name'] . ' · ' : '') ?><?= e($resolve['entry']) ?></span><?php endif; ?>
                 <?php if ($overseas && $track === 'dub'): ?><span class="tag tag-blue"><i class="i i-film"></i>普通话配音</span><?php elseif ($overseas): ?><span class="tag tag-blue"><i class="i i-film"></i>原版音轨</span><?php endif; ?>
             </div>
         </div>
         <div class="play-track">
             <?php if ($overseas): ?>
             <div class="seg" id="trackSeg">
-                <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="play.php?m=<?= $m ?>&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?>&track=orig">原版</a>
-                <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="play.php?m=<?= $m ?>&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?>&track=dub">普通话</a>
+                <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="play.php?m=<?= $m ?>&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?>&track=orig<?= $srcQ ?>">原版</a>
+                <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="play.php?m=<?= $m ?>&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?>&track=dub<?= $srcQ ?>">普通话</a>
             </div>
             <?php endif; ?>
         </div>
@@ -132,6 +143,9 @@ page_start(['title' => $zhTitle . ($m === 'tv' ? ' ' . $epName : ''), 'full_widt
     <?php if ($resolve['fallback']): ?>
     <div class="track-note"><i class="i i-info"></i>当前播放源暂无「普通话配音」版本，已为您自动切换至原版音轨。</div>
     <?php endif; ?>
+    <?php if (!empty($resolve['source_switched'])): ?>
+    <div class="track-note"><i class="i i-info"></i>所选播放源「<?= e($resolve['preferred_name']) ?>」暂无该资源，已自动切换至「<?= e($resolve['source_name']) ?>」。</div>
+    <?php endif; ?>
     <?php else: ?>
     <div class="play-box">
         <div class="no-source">
@@ -143,17 +157,41 @@ page_start(['title' => $zhTitle . ($m === 'tv' ? ' ' . $epName : ''), 'full_widt
     </div>
     <?php endif; ?>
 
+    <?php if ($m === 'movie' && $multiSource): ?>
+    <!-- 电影：播放源选择 -->
+    <div class="track-wrap" style="margin:14px 0 0">
+        <span class="track-label"><i class="i i-film"></i>播放源</span>
+        <div class="seg">
+            <a class="seg-item src-auto <?= $srcSel === 0 ? 'on' : '' ?>" href="play.php?m=<?= $m ?>&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?><?= $overseas ? '&track=' . $track : '' ?>&src=0">自动</a>
+            <?php foreach ($sources as $s): ?>
+            <a class="seg-item <?= $srcSel === (int)$s['id'] ? 'on' : '' ?>" href="play.php?m=<?= $m ?>&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?><?= $overseas ? '&track=' . $track : '' ?>&src=<?= (int)$s['id'] ?>"><?= e($s['name']) ?></a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <?php if ($m === 'tv'): ?>
     <!-- 剧集快捷切换 -->
     <div class="play-sidebar">
         <div class="section-head">
             <div class="section-title" style="font-size:16px"><span class="bar"></span>剧集列表<?= $seasonCount > 1 ? '（第 ' . $season . ' 季）' : '' ?></div>
         </div>
+        <?php if ($multiSource): ?>
+        <div class="track-wrap" style="margin:0 0 14px">
+            <span class="track-label"><i class="i i-film"></i>播放源</span>
+            <div class="seg">
+                <a class="seg-item src-auto <?= $srcSel === 0 ? 'on' : '' ?>" href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?><?= $overseas ? '&track=' . $track : '' ?>&src=0">自动</a>
+                <?php foreach ($sources as $s): ?>
+                <a class="seg-item <?= $srcSel === (int)$s['id'] ? 'on' : '' ?>" href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?><?= $overseas ? '&track=' . $track : '' ?>&src=<?= (int)$s['id'] ?>"><?= e($s['name']) ?></a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
         <?php if ($seasonCount > 1): ?>
         <div class="season-chips" style="margin-bottom:14px">
             <?php for ($s = 1; $s <= $seasonCount; $s++): ?>
             <a class="schip <?= $s === $season ? 'on' : '' ?>"
-               href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $s ?>&e=1<?= $overseas ? '&track=' . $track : '' ?>">第 <?= $s ?> 季</a>
+               href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $s ?>&e=1<?= $overseas ? '&track=' . $track : '' ?><?= $srcQ ?>">第 <?= $s ?> 季</a>
             <?php endfor; ?>
         </div>
         <?php endif; ?>
@@ -163,7 +201,7 @@ page_start(['title' => $zhTitle . ($m === 'tv' ? ' ' . $epName : ''), 'full_widt
             for ($i = 1; $i <= $maxEps; $i++):
                 $watched = isset($histAll[$i]);
             ?>
-            <a class="ep-btn <?= $i === $ep ? 'on' : '' ?>" href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $i ?><?= $overseas ? '&track=' . $track : '' ?>">
+            <a class="ep-btn <?= $i === $ep ? 'on' : '' ?>" href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $i ?><?= $overseas ? '&track=' . $track : '' ?><?= $srcQ ?>">
                 <?= $watched && $i !== $ep ? '✓ ' : '' ?><?= $i ?>
             </a>
             <?php endfor; ?>
