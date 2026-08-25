@@ -1,0 +1,11 @@
+# 安装向导生成的本地配置（含数据库凭据，勿提交）
+includes/config.php
+
+# 用户上传的头像
+uploads/avatar_*
+
+# 测试/临时文件
+cookies.txt
+*.log
+.DS_Store
+Thumbs.db
