@@ -83,18 +83,18 @@ page_start(['active' => '', 'title' => '个人中心']);
         <div class="prof-name"><?= display_username($user) ?></div>
         <div class="prof-mail"><?= e($user['email']) ?> · 注册于 <?= e(date('Y-m-d', strtotime($user['created_at']))) ?></div>
         <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
-            <span class="tag tag-blue"><i class="i i-heart"></i>收藏 <?= count($favorites) ?></span>
-            <span class="tag tag-ok"><i class="i i-history"></i>观看 <?= count($history) ?></span>
+            <span class="tag tag-blue">收藏 <?= count($favorites) ?></span>
+            <span class="tag tag-ok">观看 <?= count($history) ?></span>
         </div>
     </div>
-    <a class="btn btn-ghost" style="margin-left:auto" href="logout.php"><i class="i i-out"></i>退出登录</a>
+    <a class="btn btn-ghost" style="margin-left:auto" href="logout.php">退出登录</a>
 </div>
 
 <!-- 选项卡 -->
 <div class="prof-tabs">
-    <button class="prof-tab on" data-pane="paneFav"><i class="i i-heart"></i> 我的收藏</button>
+    <button class="prof-tab on" data-pane="paneFav">我的收藏</button>
     <button class="prof-tab" data-pane="paneHist">观看历史</button>
-    <button class="prof-tab" data-pane="paneAcc"><i class="i i-user"></i> 账号信息</button>
+    <button class="prof-tab" data-pane="paneAcc">账号信息</button>
 </div>
 
 <!-- 收藏 -->
@@ -116,7 +116,7 @@ page_start(['active' => '', 'title' => '个人中心']);
                     <div class="m-sub"><span><?= e(date('Y/m/d', strtotime($f['created_at']))) ?></span></div>
                 </div>
             </a>
-            <button class="btn btn-ghost btn-sm del-fav" data-id="<?= (int)$f['id'] ?>" style="width:100%;margin-top:6px;border-radius:9px"><i class="i i-trash"></i>取消收藏</button>
+            <button class="btn btn-ghost btn-sm del-fav" data-id="<?= (int)$f['id'] ?>" style="width:100%;margin-top:6px;border-radius:9px">取消收藏</button>
         </div>
         <?php endforeach; ?>
     </div>
@@ -144,7 +144,7 @@ page_start(['active' => '', 'title' => '个人中心']);
             </div>
             <div class="hist-progress"><i style="width:<?= min(100, max(4, (int)$h['position'] / 45)) ?>%"></i></div>
         </div>
-        <a class="btn btn-primary btn-sm" href="play.php?m=<?= e($h['media_type']) ?>&t=<?= (int)$h['tmdb_id'] ?>&s=<?= (int)$h['season'] ?>&e=<?= (int)$h['episode'] ?>"><i class="i i-play"></i>继续观看</a>
+        <a class="btn btn-primary btn-sm" href="play.php?m=<?= e($h['media_type']) ?>&t=<?= (int)$h['tmdb_id'] ?>&s=<?= (int)$h['season'] ?>&e=<?= (int)$h['episode'] ?>">继续观看</a>
         <button class="icon-btn del-hist" data-id="<?= (int)$h['id'] ?>" title="删除记录"><i class="i i-trash"></i></button>
     </div>
     <?php endforeach; ?>
@@ -154,7 +154,7 @@ page_start(['active' => '', 'title' => '个人中心']);
 <!-- 账号 -->
 <div class="prof-pane" id="paneAcc" style="display:none">
     <div class="panel">
-        <div class="panel-head"><div class="panel-title"><i class="i i-user"></i>账号信息</div></div>
+        <div class="panel-head"><div class="panel-title">账号信息</div></div>
         <div class="panel-body">
             <div class="form-grid">
                 <div class="form-item"><label>用户名</label><input class="input" value="<?= e($user['username']) ?>" disabled></div>
