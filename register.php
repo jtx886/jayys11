@@ -44,7 +44,8 @@ if (is_post() && post_val('action') === 'register') {
             }
         }
         if ($valid && $error === '') {
-            db_query("INSERT INTO users (email, username, password) VALUES (?, ?, ?)", [$email, $username, password_hash($password, PASSWORD_DEFAULT)]);
+            // 显式写入 PHP 生成的北京时间（init.php 已设 Asia/Shanghai），不依赖 MySQL 会话时区
+            db_query("INSERT INTO users (email, username, password, created_at) VALUES (?, ?, ?, ?)", [$email, $username, password_hash($password, PASSWORD_DEFAULT), date('Y-m-d H:i:s')]);
             $uid = (int)db()->lastInsertId();
             $_SESSION['uid'] = $uid;
             $_SESSION['flash_ok'] = '注册成功，欢迎加入 ' . site_name();
@@ -96,7 +97,7 @@ page_start(['title' => '注册']);
                 </div>
                 <div class="hint">验证码将发送至您的邮箱，10 分钟内有效</div>
             </div>
-            <button class="btn btn-primary btn-block btn-lg" type="submit"><i class="i i-check"></i>注 册</button>
+            <button class="btn btn-primary btn-block btn-lg" type="submit">注 册</button>
             <div class="auth-links">
                 <span>已有账号？<a href="login.php">立即登录</a></span>
                 <a href="index.php">返回首页</a>

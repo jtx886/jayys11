@@ -78,7 +78,7 @@ page_start(['title' => '登录']);
                 <label>密码</label>
                 <input class="input" type="password" name="password" placeholder="请输入密码" required>
             </div>
-            <button class="btn btn-primary btn-block btn-lg" type="submit"><i class="i i-out"></i>登 录</button>
+            <button class="btn btn-primary btn-block btn-lg" type="submit">登 录</button>
             <div class="auth-links">
                 <span>还没有账号？<a href="register.php">立即注册</a></span>
                 <a href="index.php">返回首页</a>

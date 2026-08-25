@@ -101,7 +101,7 @@ page_start(['active' => 'feedback', 'title' => '反馈中心']);
                 <button class="fb-act fb-like <?= isset($likedIds[(int)$f['id']]) ? 'liked' : '' ?>" data-id="<?= (int)$f['id'] ?>">
                     <i class="i i-thumb"></i><span>赞</span><span><?= (int)$f['like_count'] ?></span>
                 </button>
-                <span class="fb-act" style="cursor:default"><i class="i i-edit"></i><span>回复</span><span><?= (int)$f['reply_count'] ?></span></span>
+                <span class="fb-act" style="cursor:default"><span>回复</span><span><?= (int)$f['reply_count'] ?></span></span>
             </div>
             <!-- 回复区（AJAX 加载：管理员优先，>3条折叠） -->
             <div class="fb-replies-box"></div>
@@ -109,7 +109,7 @@ page_start(['active' => 'feedback', 'title' => '反馈中心']);
             <form class="fb-reply-form" data-id="<?= (int)$f['id'] ?>">
                 <?php echo avatar_html(['username' => $user['username'], 'avatar' => $user['avatar']], 36); ?>
                 <input class="input" type="text" maxlength="1000" placeholder="友善回复，理性发言…">
-                <button class="btn btn-primary btn-sm" type="submit"><i class="i i-send"></i>回复</button>
+                <button class="btn btn-primary btn-sm" type="submit">回复</button>
             </form>
             <?php endif; ?>
         </div>
@@ -132,7 +132,7 @@ page_start(['active' => 'feedback', 'title' => '反馈中心']);
     <div>
         <?php if ($user): ?>
         <div class="fb-side-card">
-            <div class="fb-side-title"><i class="i i-edit"></i>发布反馈</div>
+            <div class="fb-side-title">发布反馈</div>
             <form method="post">
                 <input type="hidden" name="action" value="post_feedback">
                 <?= csrf_field() ?>

@@ -160,7 +160,7 @@ page_start(['title' => $zhTitle . ($m === 'tv' ? ' ' . $epName : ''), 'full_widt
     <?php if ($m === 'movie' && $multiSource): ?>
     <!-- 电影：播放源选择 -->
     <div class="track-wrap" style="margin:14px 0 0">
-        <span class="track-label"><i class="i i-film"></i>播放源</span>
+        <span class="track-label">播放源</span>
         <div class="seg">
             <a class="seg-item src-auto <?= $srcSel === 0 ? 'on' : '' ?>" href="play.php?m=<?= $m ?>&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?><?= $overseas ? '&track=' . $track : '' ?>&src=0">自动</a>
             <?php foreach ($sources as $s): ?>
@@ -178,7 +178,7 @@ page_start(['title' => $zhTitle . ($m === 'tv' ? ' ' . $epName : ''), 'full_widt
         </div>
         <?php if ($multiSource): ?>
         <div class="track-wrap" style="margin:0 0 14px">
-            <span class="track-label"><i class="i i-film"></i>播放源</span>
+            <span class="track-label">播放源</span>
             <div class="seg">
                 <a class="seg-item src-auto <?= $srcSel === 0 ? 'on' : '' ?>" href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $season ?>&e=<?= $ep ?><?= $overseas ? '&track=' . $track : '' ?>&src=0">自动</a>
                 <?php foreach ($sources as $s): ?>

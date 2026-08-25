@@ -93,7 +93,7 @@ page_start(['active' => '', 'title' => '个人中心']);
 <!-- 选项卡 -->
 <div class="prof-tabs">
     <button class="prof-tab on" data-pane="paneFav"><i class="i i-heart"></i> 我的收藏</button>
-    <button class="prof-tab" data-pane="paneHist"><i class="i i-history"></i> 观看历史</button>
+    <button class="prof-tab" data-pane="paneHist">观看历史</button>
     <button class="prof-tab" data-pane="paneAcc"><i class="i i-user"></i> 账号信息</button>
 </div>
 

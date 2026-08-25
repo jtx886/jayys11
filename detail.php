@@ -163,7 +163,7 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
 
         <?php if ($type === 'tv' && $seasons): ?>
         <div class="season-bar">
-            <div class="sel-label"><i class="i i-tv"></i>选择季</div>
+            <div class="sel-label">选择季</div>
             <div class="season-chips">
                 <?php foreach ($seasons as $s): $sn = (int)$s['season_number']; ?>
                 <a class="schip <?= $sn === $seasonNo ? 'on' : '' ?>"
@@ -172,7 +172,7 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
             </div>
             <?php if ($multiSource): ?>
             <div class="track-wrap" style="margin:0">
-                <span class="track-label"><i class="i i-film"></i>播放源</span>
+                <span class="track-label">播放源</span>
                 <div class="seg">
                     <a class="seg-item src-auto <?= $srcSel === 0 ? 'on' : '' ?>" href="<?= e($srcBase) ?>&src=0">自动</a>
                     <?php foreach ($sources as $s): ?>
@@ -183,7 +183,7 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
             <?php endif; ?>
             <?php if ($overseas): ?>
             <div class="track-wrap" style="margin:0 0 0 auto">
-                <span class="track-label"><i class="i i-film"></i>音轨</span>
+                <span class="track-label">音轨</span>
                 <div class="seg">
                     <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="detail.php?type=tv&id=<?= $id ?>&season=<?= $seasonNo ?>&track=orig<?= $srcQ ?>">原版</a>
                     <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="detail.php?type=tv&id=<?= $id ?>&season=<?= $seasonNo ?>&track=dub<?= $srcQ ?>">普通话</a>
@@ -240,7 +240,7 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
         <div class="season-bar">
             <?php if ($overseas): ?>
             <div class="track-wrap" style="margin:0">
-                <span class="track-label"><i class="i i-film"></i>音轨选择</span>
+                <span class="track-label">音轨选择</span>
                 <div class="seg">
                     <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="detail.php?type=movie&id=<?= $id ?>&track=orig<?= $srcQ ?>">原版（中文字幕）</a>
                     <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="detail.php?type=movie&id=<?= $id ?>&track=dub<?= $srcQ ?>">普通话配音</a>
@@ -249,7 +249,7 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
             <?php endif; ?>
             <?php if ($multiSource): ?>
             <div class="track-wrap" style="margin:<?= $overseas ? '0 0 0 auto' : '0' ?>">
-                <span class="track-label"><i class="i i-film"></i>播放源</span>
+                <span class="track-label">播放源</span>
                 <div class="seg">
                     <a class="seg-item src-auto <?= $srcSel === 0 ? 'on' : '' ?>" href="<?= e($srcBase) ?>&src=0">自动</a>
                     <?php foreach ($sources as $s): ?>
