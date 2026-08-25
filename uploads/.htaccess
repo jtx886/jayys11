@@ -1,0 +1,10 @@
+# 禁止在上传目录执行任何脚本
+<FilesMatch "\.(?i:php|phtml|php3|php4|php5|phps|pl|py|cgi|sh|asp|aspx)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
