@@ -44,7 +44,8 @@
             userBox.classList.toggle('menu-open');
         });
         document.addEventListener('click', function () { userBox.classList.remove('menu-open'); });
-        $('#userMenu').addEventListener('click', function (e) { e.stopPropagation(); });
+        var userMenu = $('#userMenu');
+        if (userMenu) userMenu.addEventListener('click', function (e) { e.stopPropagation(); });
     }
 
     /* ---------------- Toast 自动消失 ---------------- */
@@ -112,34 +113,9 @@
         });
     }
 
-    /* ---------------- 详情页：季切换 ---------------- */
-    var seasonSel = $('#seasonSel');
-    if (seasonSel) {
-        seasonSel.addEventListener('change', function () {
-            var s = seasonSel.value;
-            location.href = seasonSel.getAttribute('data-base') + '&season=' + s + (seasonSel.getAttribute('data-track') ? '&track=' + seasonSel.getAttribute('data-track') : '');
-        });
-    }
-
-    /* 详情页：音轨切换 */
-    var trackSeg = $('#trackSeg');
-    if (trackSeg) {
-        $$('.seg-item', trackSeg).forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var track = btn.getAttribute('data-track');
-                $$('.seg-item', trackSeg).forEach(function (b) { b.classList.toggle('on', b === btn); });
-                $$('[data-play-link]').forEach(function (a) {
-                    var href = a.getAttribute('href');
-                    href = href.replace(/([?&])track=[^&]*/, '$1track=' + track);
-                    if (href.indexOf('track=') === -1) href += '&track=' + track;
-                    a.setAttribute('href', href);
-                });
-                if (window.localStorage) localStorage.setItem('jay_track', track);
-            });
-        });
-    }
-
     /* ---------------- 详情页：收藏 ---------------- */
+    /* 季切换与音轨切换已改为纯链接（<a href>），不依赖 JS */
+
     var favBtn = $('#favBtn');
     if (favBtn) {
         favBtn.addEventListener('click', function () {
@@ -153,8 +129,8 @@
                 if (res.ok) {
                     favBtn.classList.toggle('btn-ghost', !res.faved);
                     favBtn.classList.toggle('btn-primary', res.faved);
-                    var icon = favBtn.querySelector('.i');
-                    if (icon) { icon.className = 'i ' + (res.faved ? 'i-heart' : 'i-heart'); icon.style.opacity = res.faved ? '1' : '.6'; }
+                    var label = favBtn.querySelector('span');
+                    if (label) label.textContent = res.faved ? '已收藏' : '收藏';
                     toast(res.faved ? '已加入收藏' : '已取消收藏', true);
                 } else if (res.need_login) { showLoginModal(); }
                 else { toast(res.msg || '操作失败'); }

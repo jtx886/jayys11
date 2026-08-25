@@ -148,15 +148,15 @@ page_start(['title' => $zhTitle . ($m === 'tv' ? ' ' . $epName : ''), 'full_widt
     <div class="play-sidebar">
         <div class="section-head">
             <div class="section-title" style="font-size:16px"><span class="bar"></span>剧集列表<?= $seasonCount > 1 ? '（第 ' . $season . ' 季）' : '' ?></div>
-            <?php if ($seasonCount > 1): ?>
-            <select class="input" id="seasonSel" style="width:auto;padding:8px 36px 8px 12px;font-size:13px"
-                    data-base="play.php?m=tv&t=<?= $tmdbId ?>&e=<?= $ep ?>" data-track="<?= $overseas ? $track : '' ?>">
-                <?php for ($s = 1; $s <= $seasonCount; $s++): ?>
-                <option value="<?= $s ?>" <?= $s === $season ? 'selected' : '' ?>>第 <?= $s ?> 季</option>
-                <?php endfor; ?>
-            </select>
-            <?php endif; ?>
         </div>
+        <?php if ($seasonCount > 1): ?>
+        <div class="season-chips" style="margin-bottom:14px">
+            <?php for ($s = 1; $s <= $seasonCount; $s++): ?>
+            <a class="schip <?= $s === $season ? 'on' : '' ?>"
+               href="play.php?m=tv&t=<?= $tmdbId ?>&s=<?= $s ?>&e=1<?= $overseas ? '&track=' . $track : '' ?>">第 <?= $s ?> 季</a>
+            <?php endfor; ?>
+        </div>
+        <?php endif; ?>
         <div class="play-eps">
             <?php
             $maxEps = max($totalEps, $ep, 12);

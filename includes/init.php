@@ -31,6 +31,9 @@ if (!defined('APP_INSTALLED')) {
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);
 ini_set('display_errors', '0');
 
+// 统一时区：PHP 与 MySQL 均为北京时间，避免 NOW() 与 time() 偏差导致"三小时前"/验证码误判过期
+date_default_timezone_set('Asia/Shanghai');
+
 if (session_status() === PHP_SESSION_NONE) {
     session_name('JAYSESS');
     session_start();

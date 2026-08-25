@@ -78,6 +78,8 @@ function db() {
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
+                // MySQL 会话时区与 PHP 对齐（北京时间），保证 NOW() 与 time() 一致
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone = '+08:00'",
             ]);
         } catch (PDOException $ex) {
             die('<!doctype html><meta charset="utf-8"><body style="background:#0b0e14;color:#e8eaf0;font-family:sans-serif;padding:60px;text-align:center"><h2>数据库连接失败</h2><p style="color:#8b93a7">' . e($ex->getMessage()) . '</p></body>');

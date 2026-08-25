@@ -143,7 +143,7 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
                     <a class="btn btn-primary btn-lg" data-play-link href="<?= e($playHref) ?>" <?= is_login() ? '' : 'data-need-login' ?>><i class="i i-play"></i><?= $type === 'movie' ? '立即播放' : '播放第 1 集' ?></a>
                     <button class="btn <?= $faved ? 'btn-primary' : 'btn-ghost' ?> btn-lg" id="favBtn"
                             data-type="<?= e($type) ?>" data-id="<?= $id ?>" data-title="<?= e($zhTitle) ?>" data-poster="<?= e($poster) ?>">
-                        <i class="i i-heart" style="opacity:<?= $faved ? 1 : .6 ?>"></i><span><?= $faved ? '已收藏' : '收藏' ?></span>
+                        <span><?= $faved ? '已收藏' : '收藏' ?></span>
                     </button>
                 </div>
             </div>
@@ -152,17 +152,18 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
         <?php if ($type === 'tv' && $seasons): ?>
         <div class="season-bar">
             <div class="sel-label"><i class="i i-tv"></i>选择季</div>
-            <select class="input" id="seasonSel" style="width:auto;padding:10px 40px 10px 15px" data-base="detail.php?type=tv&id=<?= $id ?>" data-track="<?= $track !== '' ? $track : '' ?>">
-                <?php foreach ($seasons as $s): ?>
-                <option value="<?= (int)$s['season_number'] ?>" <?= (int)$s['season_number'] === $seasonNo ? 'selected' : '' ?>>第 <?= (int)$s['season_number'] ?> 季<?= !empty($s['air_date']) ? '（' . substr($s['air_date'], 0, 4) . '）' : '' ?></option>
+            <div class="season-chips">
+                <?php foreach ($seasons as $s): $sn = (int)$s['season_number']; ?>
+                <a class="schip <?= $sn === $seasonNo ? 'on' : '' ?>"
+                   href="detail.php?type=tv&id=<?= $id ?>&season=<?= $sn ?><?= $track !== '' ? '&track=' . $track : '' ?>">第 <?= $sn ?> 季<?= !empty($s['air_date']) ? '·' . substr($s['air_date'], 0, 4) : '' ?></a>
                 <?php endforeach; ?>
-            </select>
+            </div>
             <?php if ($overseas): ?>
             <div class="track-wrap" style="margin:0 0 0 auto">
                 <span class="track-label"><i class="i i-film"></i>音轨</span>
-                <div class="seg" id="trackSeg">
-                    <button type="button" class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" data-track="orig">原版</button>
-                    <button type="button" class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" data-track="dub">普通话</button>
+                <div class="seg">
+                    <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="detail.php?type=tv&id=<?= $id ?>&season=<?= $seasonNo ?>&track=orig">原版</a>
+                    <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="detail.php?type=tv&id=<?= $id ?>&season=<?= $seasonNo ?>&track=dub">普通话</a>
                 </div>
             </div>
             <?php endif; ?>
@@ -216,9 +217,9 @@ page_start(['title' => $zhTitle, 'full_width' => false]);
         <div class="season-bar">
             <div class="track-wrap" style="margin:0">
                 <span class="track-label"><i class="i i-film"></i>音轨选择</span>
-                <div class="seg" id="trackSeg">
-                    <button type="button" class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" data-track="orig">原版（中文字幕）</button>
-                    <button type="button" class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" data-track="dub">普通话配音</button>
+                <div class="seg">
+                    <a class="seg-item audio-orig <?= $track === 'dub' ? '' : 'on' ?>" href="detail.php?type=movie&id=<?= $id ?>&track=orig">原版（中文字幕）</a>
+                    <a class="seg-item <?= $track === 'dub' ? 'on' : '' ?>" href="detail.php?type=movie&id=<?= $id ?>&track=dub">普通话配音</a>
                 </div>
             </div>
         </div>
