@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.jay.movie'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.jay.movie"
+        minSdk 21          // 覆盖 Android 5.0 及以上（99% 设备）
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    // 发布签名（用 debug 签名即可自行安装；正式上架需换自有签名）
+    signingConfigs {
+        release {
+            storeFile file("../keystore.jks")
+            storePassword "jaymovie123"
+            keyAlias "jaymovie"
+            keyPassword "jaymovie123"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.webkit:webkit:1.11.0'
+}
