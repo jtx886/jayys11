@@ -33,10 +33,8 @@ public class HomeFragment extends Fragment {
     private static final String[] CATS = {"movie", "tv", "anime", "variety"};
     private static final String[] TITLES = {"热门电影", "热门剧集", "热门动漫", "热门综艺"};
     private final LinearLayout[] sections = new LinearLayout[4];
-    private final int[] pages = {1, 1, 1, 1};
 
     private static final int ROW_COUNT = 12;          // 每板块展示数量
-    private static final int MAX_PAGE = 5;            // 换一批循环上限
     private ExecutorService pool;                     // 懒创建，销毁后可重建
     private final AtomicInteger pending = new AtomicInteger();
 
@@ -59,12 +57,13 @@ public class HomeFragment extends Fragment {
             sections[i] = root.findViewById(ids[i]);
             final int idx = i;
             View head = buildHead(TITLES[i]);
-            Button refresh = head.findViewById(R.id.secMore);
-            refresh.setText("换一批");
-            refresh.setOnClickListener(v -> {
-                pages[idx] = pages[idx] >= MAX_PAGE ? 1 : pages[idx] + 1;
-                loadSection(idx);
-            });
+            Button more = head.findViewById(R.id.secMore);
+            more.setText("查看更多");
+            more.setOnClickListener(v ->
+                    com.jay.movie.MoreActivity.start(getActivity(), CATS[idx], TITLES[idx]));
+            // 标题行整体也可点进更多
+            head.setOnClickListener(v ->
+                    com.jay.movie.MoreActivity.start(getActivity(), CATS[idx], TITLES[idx]));
             sections[i].addView(head);
             sections[i].addView(buildRow());
         }
@@ -96,7 +95,7 @@ public class HomeFragment extends Fragment {
         exec(() -> {
             List<Models.Media> list = null;
             try {
-                list = Tmdb.category(CATS[idx], pages[idx]);
+                list = Tmdb.category(CATS[idx], 1);
             } catch (Exception ignored) {
             }
             if (list == null) list = new ArrayList<>();
@@ -108,10 +107,11 @@ public class HomeFragment extends Fragment {
                 row.removeAllViews();
                 if (finalList.isEmpty()) {
                     TextView t = new TextView(getActivity());
-                    t.setText("加载失败，点击「换一批」重试");
+                    t.setText("加载失败，点击重试");
                     t.setTextColor(0xff8b93a7);
                     t.setTextSize(12);
                     t.setPadding(30, 20, 30, 20);
+                    t.setOnClickListener(v -> loadSection(idx));
                     row.addView(t);
                 } else {
                     for (Models.Media m : finalList) row.addView(makeCard(m));

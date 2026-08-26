@@ -25,6 +25,10 @@
         </activity>
 
         <activity
+            android:name=".MoreActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+
+        <activity
             android:name=".DetailActivity"
             android:configChanges="orientation|screenSize|keyboardHidden" />
 
