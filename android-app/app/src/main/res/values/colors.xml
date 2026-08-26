@@ -1,3 +1,14 @@
 <resources>
-    <color name="ic_launcher_background">#e50914</color>
+    <color name="bg">#0b0e14</color>
+    <color name="bg2">#141821</color>
+    <color name="bg3">#1a2030</color>
+    <color name="bg4">#202739</color>
+    <color name="bd">#2a3245</color>
+    <color name="tx">#e8eaf0</color>
+    <color name="tx2">#aab3c5</color>
+    <color name="mut">#8b93a7</color>
+    <color name="accent">#e50914</color>
+    <color name="accent_soft">#3ce50914</color>
+    <color name="gold">#ffc24b</color>
+    <color name="ok">#2ecc97</color>
 </resources>

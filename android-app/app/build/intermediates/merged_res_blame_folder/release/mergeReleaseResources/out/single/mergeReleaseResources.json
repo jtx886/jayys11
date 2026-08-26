@@ -1,0 +1,110 @@
+[
+    {
+        "merged": "com.jay.movie.app-release-4:/drawable_ph_poster.xml.flat",
+        "source": "com.jay.movie.app-main-5:/drawable/ph_poster.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_dialog_add_source.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/dialog_add_source.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_fragment_fav.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/fragment_fav.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_activity_player.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/activity_player.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_fragment_settings.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/fragment_settings.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-mdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-mdpi_ic_launcher.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-mdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-xxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_activity_detail.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/activity_detail.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/color_tab_text.xml.flat",
+        "source": "com.jay.movie.app-main-5:/color/tab_text.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_activity_main.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/drawable_chip_bg.xml.flat",
+        "source": "com.jay.movie.app-main-5:/drawable/chip_bg.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_item_hist.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/item_hist.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/drawable_grad_backdrop.xml.flat",
+        "source": "com.jay.movie.app-main-5:/drawable/grad_backdrop.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-hdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-xhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/drawable_btn_ghost.xml.flat",
+        "source": "com.jay.movie.app-main-5:/drawable/btn_ghost.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-xxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-xxxhdpi/ic_launcher_round.png"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_fragment_home.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/fragment_home.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-hdpi_ic_launcher.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-hdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_fragment_search.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/fragment_search.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_item_source.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/item_source.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-xxxhdpi/ic_launcher.png"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/drawable_btn_primary.xml.flat",
+        "source": "com.jay.movie.app-main-5:/drawable/btn_primary.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/layout_item_poster.xml.flat",
+        "source": "com.jay.movie.app-main-5:/layout/item_poster.xml"
+    },
+    {
+        "merged": "com.jay.movie.app-release-4:/mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "com.jay.movie.app-main-5:/mipmap-xhdpi/ic_launcher.png"
+    }
+]

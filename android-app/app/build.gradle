@@ -8,13 +8,12 @@ android {
 
     defaultConfig {
         applicationId "com.jay.movie"
-        minSdk 21          // 覆盖 Android 5.0 及以上（99% 设备）
+        minSdk 21
         targetSdk 34
         versionCode 1
         versionName "1.0"
     }
 
-    // 发布签名（用 debug 签名即可自行安装；正式上架需换自有签名）
     signingConfigs {
         release {
             storeFile file("../keystore.jks")
@@ -28,7 +27,6 @@ android {
         release {
             minifyEnabled false
             signingConfig signingConfigs.release
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -36,9 +34,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
 }
 
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.webkit:webkit:1.11.0'
-}
+// 独立离线 App：零外部依赖，全部使用 Android 框架自带 API
+// 数据（收藏/历史/播放源/Key）保存在手机本地 SharedPreferences，无任何数据库

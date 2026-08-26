@@ -1,8 +1,12 @@
 <resources>
-    <style name="Theme.JayMovie" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowBackground">#0b0e14</item>
-        <item name="android:statusBarColor">#0b0e14</item>
-        <item name="android:navigationBarColor">#0b0e14</item>
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorPrimary">@color/accent</item>
+        <item name="android:colorPrimaryDark">@color/bg</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
     </style>
 </resources>
