@@ -9,3 +9,9 @@ cookies.txt
 *.log
 .DS_Store
 Thumbs.db
+
+# Android 构建产物
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
+android-app/local.properties

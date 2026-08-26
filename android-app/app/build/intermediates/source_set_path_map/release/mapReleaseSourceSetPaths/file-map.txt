@@ -1,7 +1,0 @@
-com.jay.movie.app-pngs-0 /workspace/android-app/app/build/generated/res/pngs/release
-com.jay.movie.app-resValues-1 /workspace/android-app/app/build/generated/res/resValues/release
-com.jay.movie.app-packageReleaseResources-2 /workspace/android-app/app/build/intermediates/incremental/release/packageReleaseResources/merged.dir
-com.jay.movie.app-packageReleaseResources-3 /workspace/android-app/app/build/intermediates/incremental/release/packageReleaseResources/stripped.dir
-com.jay.movie.app-release-4 /workspace/android-app/app/build/intermediates/merged_res/release/mergeReleaseResources
-com.jay.movie.app-main-5 /workspace/android-app/app/src/main/res
-com.jay.movie.app-release-6 /workspace/android-app/app/src/release/res
