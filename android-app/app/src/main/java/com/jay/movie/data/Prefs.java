@@ -180,6 +180,37 @@ public class Prefs {
         }
     }
 
+    /* ---------------- 搜索历史 ---------------- */
+
+    /** 记录一次搜索（去重置顶，上限 10 条） */
+    public static void addSearch(Context c, String kw) {
+        if (kw == null || kw.trim().isEmpty()) return;
+        List<String> l = getSearches(c);
+        l.remove(kw);
+        l.add(0, kw);
+        while (l.size() > 10) l.remove(l.size() - 1);
+        JSONArray a = new JSONArray();
+        for (String s : l) a.put(s);
+        sp(c).edit().putString("searches_json", a.toString()).apply();
+    }
+
+    public static List<String> getSearches(Context c) {
+        List<String> l = new ArrayList<>();
+        try {
+            JSONArray a = new JSONArray(sp(c).getString("searches_json", "[]"));
+            for (int i = 0; i < a.length(); i++) {
+                String s = a.optString(i, "");
+                if (!s.isEmpty()) l.add(s);
+            }
+        } catch (Exception ignored) {
+        }
+        return l;
+    }
+
+    public static void clearSearches(Context c) {
+        sp(c).edit().putString("searches_json", "[]").apply();
+    }
+
     private static void saveHistArr(Context c, List<Models.Hist> l) {
         JSONArray a = new JSONArray();
         for (Models.Hist h : l) {

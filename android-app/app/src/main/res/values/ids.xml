@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 首页板块标题行的右侧按钮 -->
+    <item name="secMore" type="id" />
+    <!-- 搜索页热门/历史区块 -->
+    <item name="hotFlow" type="id" />
+    <item name="histFlow" type="id" />
+    <item name="histSection" type="id" />
+    <item name="btnClearHist" type="id" />
+    <item name="hintBox" type="id" />
+</resources>

@@ -9,6 +9,12 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** TMDB 接口封装（与网站 includes/tmdb.php 逻辑一致） */
 public class Tmdb {
@@ -61,6 +67,175 @@ public class Tmdb {
             if (m.title != null && !m.title.isEmpty()) l.add(m);
         }
         return l;
+    }
+
+    /* ---------------- 季级搜索（剧集按季展开成独立条目） ---------------- */
+
+    /** 季数关键词：第2季 / 第二季 / 第2部 / 2季 / S2 */
+    private static final Pattern P_NUM_SEASON = Pattern.compile("(\\d{1,2})\\s*季");
+    private static final Pattern P_CN_SEASON = Pattern.compile("第\\s*([0-9一二三四五六七八九十两]+)\\s*[季部]");
+    private static final Pattern P_S_SEASON = Pattern.compile("(?i)(?:^|\\s)[sS](\\d{1,2})(?:\\s|$)");
+
+    /**
+     * 搜索并展开季：
+     * - 关键词含季数（如「斗罗大陆 第3季」）时，剥离季数后搜索，结果只保留该季条目
+     * - 普通搜索时，多季剧集会在本体后插入每一季的独立条目（点击直接定位该季）
+     */
+    public static List<Models.Media> searchWithSeasons(String query, int page) {
+        String raw = query == null ? "" : query.trim();
+        int qSeason = 0;
+        String kw = raw;
+
+        Matcher m = P_NUM_SEASON.matcher(kw);
+        if (m.find()) {
+            qSeason = parseInt(m.group(1));
+            kw = m.replaceAll(" ").trim();
+        } else {
+            m = P_CN_SEASON.matcher(kw);
+            if (m.find()) {
+                qSeason = cnNum(m.group(1));
+                kw = m.replaceAll(" ").trim();
+            } else {
+                m = P_S_SEASON.matcher(kw);
+                if (m.find()) {
+                    qSeason = parseInt(m.group(1));
+                    kw = (kw.substring(0, m.start()) + " " + kw.substring(m.end())).trim();
+                }
+            }
+        }
+        if (qSeason < 1 || qSeason > 60) qSeason = 0;
+        if (kw.isEmpty()) kw = raw;
+
+        List<Models.Media> base = search(kw, page);
+        if (base == null) return null;
+        if (base.isEmpty() && !kw.equals(raw)) {
+            // 清洗后的词搜不到，回退原词
+            base = search(raw, page);
+            if (base == null) return null;
+        }
+        return expandSeasons(base, qSeason);
+    }
+
+    /** 把结果中的剧集展开出各季条目 */
+    private static List<Models.Media> expandSeasons(List<Models.Media> base, int qSeason) {
+        List<Models.Media> out = new ArrayList<>();
+
+        // 统计 tv 条目，需要拉详情的并行拉取
+        List<Models.Media> tvs = new ArrayList<>();
+        for (Models.Media m : base) if (m.type.equals("tv")) tvs.add(m);
+
+        // 指定季时全部尝试匹配；普通搜索只展开前 4 部（控制请求量）
+        int expand = qSeason > 0 ? tvs.size() : Math.min(4, tvs.size());
+        JSONObject[] details = new JSONObject[tvs.size()];
+        if (expand > 0) {
+            ExecutorService pool = Executors.newFixedThreadPool(4);
+            CountDownLatch latch = new CountDownLatch(expand);
+            for (int i = 0; i < expand; i++) {
+                final int idx = i;
+                final int tvId = tvs.get(idx).id;
+                pool.execute(() -> {
+                    try {
+                        details[idx] = req("/tv/" + tvId, "");
+                    } catch (Exception ignored) {
+                    }
+                    latch.countDown();
+                });
+            }
+            try {
+                latch.await(12, TimeUnit.SECONDS);
+            } catch (Exception ignored) {
+            }
+            pool.shutdown();
+        }
+
+        for (Models.Media m : base) {
+            if (!m.type.equals("tv")) {
+                out.add(m);
+                continue;
+            }
+            int idx = tvs.indexOf(m);
+            List<JSONObject> ss = idx >= 0 && idx < expand ? seasonsOf(details[idx]) : new ArrayList<>();
+
+            if (qSeason > 0) {
+                // 只要指定季
+                for (JSONObject s : ss) {
+                    if (s.optInt("season_number", 0) == qSeason) {
+                        out.add(seasonItem(m, s));
+                        break;
+                    }
+                }
+                continue;
+            }
+            out.add(m);
+            if (ss.size() > 1) {
+                for (JSONObject s : ss) {
+                    if (s.optInt("season_number", 0) < 1) continue;
+                    out.add(seasonItem(m, s));
+                }
+            }
+        }
+        return out;
+    }
+
+    /** 详情里的季列表（过滤特别篇） */
+    private static List<JSONObject> seasonsOf(JSONObject detail) {
+        List<JSONObject> l = new ArrayList<>();
+        if (detail == null) return l;
+        JSONArray ss = detail.optJSONArray("seasons");
+        if (ss == null) return l;
+        for (int i = 0; i < ss.length(); i++) {
+            JSONObject s = ss.optJSONObject(i);
+            if (s != null && s.optInt("season_number", 0) >= 1) l.add(s);
+        }
+        return l;
+    }
+
+    /** 由 tv 本体 + 季对象生成独立条目 */
+    private static Models.Media seasonItem(Models.Media tv, JSONObject s) {
+        Models.Media m = new Models.Media();
+        m.type = "tv";
+        m.id = tv.id;
+        int no = s.optInt("season_number", 1);
+        m.season = no;
+        String base = tv.title == null || tv.title.isEmpty() ? tv.origTitle : tv.title;
+        m.title = base + " 第" + no + "季";
+        m.origTitle = tv.origTitle;
+        String pp = s.optString("poster_path", "");
+        m.poster = pp == null || pp.isEmpty() ? tv.poster : img(pp, "w342");
+        m.backdrop = tv.backdrop;
+        String ad = s.optString("air_date", "");
+        m.year = ad != null && ad.length() >= 4 ? ad.substring(0, 4) : tv.year;
+        m.rating = s.optDouble("vote_average", 0) > 0 ? s.optDouble("vote_average", 0) : tv.rating;
+        return m;
+    }
+
+    private static int parseInt(String s) {
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    /** 中文数字（支持到九十九） */
+    private static int cnNum(String s) {
+        if (s == null) return 0;
+        s = s.trim();
+        if (s.matches("[0-9]+")) return parseInt(s);
+        int total = 0, cur = 0;
+        for (char ch : s.toCharArray()) {
+            if (ch == '两') {
+                cur = 2;
+                continue;
+            }
+            int v = "零一二三四五六七八九".indexOf(ch);
+            if (v >= 0) cur = v;
+            else if (ch == '十') {
+                total += (cur == 0 ? 1 : cur) * 10;
+                cur = 0;
+            }
+        }
+        return total + cur;
     }
 
     /* ---------------- 详情 / 季 ---------------- */

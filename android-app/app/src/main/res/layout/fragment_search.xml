@@ -56,20 +56,98 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/hintBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="14dp"
+            android:paddingBottom="20dp">
+
+            <!-- 热门搜索 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingBottom="4dp"
+                android:text="热门搜索"
+                android:textColor="@color/tx2"
+                android:textSize="13.5sp"
+                android:textStyle="bold" />
+
+            <com.jay.movie.ui.FlowLayout
+                android:id="@+id/hotFlow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!-- 搜索历史 -->
+            <LinearLayout
+                android:id="@+id/histSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingStart="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="4dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="搜索历史"
+                        android:textColor="@color/tx2"
+                        android:textSize="13.5sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/btnClearHist"
+                        android:layout_width="wrap_content"
+                        android:layout_height="28dp"
+                        android:layout_marginEnd="16dp"
+                        android:background="@drawable/chip_bg"
+                        android:minWidth="0dp"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="清空"
+                        android:textColor="@color/mut"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <com.jay.movie.ui.FlowLayout
+                    android:id="@+id/histFlow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
     <TextView
         android:id="@+id/sStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="30dp"
-        android:text="输入关键词开始搜索"
+        android:text=""
         android:textColor="@color/mut"
         android:textSize="13sp" />
 
     <GridView
         android:id="@+id/sGrid"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
         android:clipToPadding="false"
         android:columnWidth="106dp"
         android:horizontalSpacing="10dp"
@@ -77,5 +155,6 @@
         android:padding="10dp"
         android:scrollbars="none"
         android:stretchMode="spacingWidth"
-        android:verticalSpacing="12dp" />
+        android:verticalSpacing="12dp"
+        android:visibility="gone" />
 </LinearLayout>

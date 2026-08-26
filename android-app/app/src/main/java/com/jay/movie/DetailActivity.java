@@ -31,9 +31,15 @@ import android.widget.FrameLayout;
 public class DetailActivity extends Activity {
 
     public static void start(Context c, String type, int id) {
+        start(c, type, id, 0);
+    }
+
+    /** season > 0 时直接定位到该季（用于搜索结果的季条目） */
+    public static void start(Context c, String type, int id, int season) {
         Intent i = new Intent(c, DetailActivity.class);
         i.putExtra("type", type);
         i.putExtra("id", id);
+        if (season > 0) i.putExtra("season", season);
         c.startActivity(i);
     }
 
@@ -72,6 +78,8 @@ public class DetailActivity extends Activity {
         type = getIntent().getStringExtra("type");
         if (type == null || (!type.equals("movie") && !type.equals("tv"))) type = "movie";
         id = getIntent().getIntExtra("id", 0);
+        seasonNo = getIntent().getIntExtra("season", 1);
+        if (seasonNo < 1) seasonNo = 1;
         if (id <= 0) {
             finish();
             return;

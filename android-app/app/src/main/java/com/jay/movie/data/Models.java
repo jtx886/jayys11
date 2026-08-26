@@ -19,6 +19,7 @@ public class Models {
         public String backdrop = "";    // 完整 URL
         public String year = "";
         public double rating;
+        public int season;              // >0 = 该条目代表某一季（点击直接定位）
 
         public JSONObject toFavJson() {
             JSONObject o = new JSONObject();
