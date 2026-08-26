@@ -14,54 +14,25 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jay.movie.R;
-import com.jay.movie.api.Tmdb;
 import com.jay.movie.data.Models;
 import com.jay.movie.data.Prefs;
 
 import java.util.List;
 
-/** 设置页：TMDB Key + 播放源管理（替代网站后台） */
+/** 设置页：播放源管理（TMDB Key 已内置，无需展示） */
 public class SettingsFragment extends Fragment {
 
-    private View root;
-    private EditText keyInput;
     private LinearLayout srcList;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        root = inflater.inflate(R.layout.fragment_settings, container, false);
-        keyInput = root.findViewById(R.id.setKey);
+        View root = inflater.inflate(R.layout.fragment_settings, container, false);
         srcList = root.findViewById(R.id.srcList);
 
-        keyInput.setText(Prefs.getKey(getActivity()));
-        root.findViewById(R.id.btnSaveKey).setOnClickListener(v -> saveKey());
         root.findViewById(R.id.btnAddSrc).setOnClickListener(v -> showAddDialog());
 
         renderSources();
         return root;
-    }
-
-    private void saveKey() {
-        final String k = keyInput.getText().toString().trim();
-        if (k.isEmpty()) {
-            // 清空 = 恢复使用内置 Key
-            Prefs.setKey(getActivity(), "");
-            keyInput.setText(Prefs.getKey(getActivity()));
-            Toast.makeText(getActivity(), "已恢复使用内置 Key", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        Prefs.setKey(getActivity(), k);
-        Toast.makeText(getActivity(), "保存成功，正在测试…", Toast.LENGTH_SHORT).show();
-
-        new Thread(() -> {
-            final boolean ok = Tmdb.category("movie", 1) != null;
-            if (root == null || getActivity() == null) return;
-            root.post(() -> {
-                if (getActivity() == null) return;
-                Toast.makeText(getActivity(), ok ? "Key 有效，可以正常使用了" : "Key 无效或网络异常，请检查",
-                        Toast.LENGTH_LONG).show();
-            });
-        }).start();
     }
 
     /* ---------------- 播放源管理 ---------------- */

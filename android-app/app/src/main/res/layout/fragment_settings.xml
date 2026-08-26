@@ -25,46 +25,11 @@
             android:paddingEnd="16dp"
             android:paddingBottom="30dp">
 
-            <!-- TMDB Key -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="8dp"
-                android:paddingBottom="10dp"
-                android:text="TMDB API Key（已内置，可换成自己的）"
-                android:textColor="@color/tx2"
-                android:textSize="13.5sp"
-                android:textStyle="bold" />
-
-            <EditText
-                android:id="@+id/setKey"
-                android:layout_width="match_parent"
-                android:layout_height="46dp"
-                android:background="@drawable/btn_ghost"
-                android:hint="粘贴 themoviedb.org 的 API Key"
-                android:inputType="text"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:singleLine="true"
-                android:textColor="@color/tx"
-                android:textColorHint="#525b6e"
-                android:textSize="13.5sp" />
-
-            <Button
-                android:id="@+id/btnSaveKey"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/btn_primary"
-                android:text="保存并测试"
-                android:textColor="#ffffff"
-                android:textStyle="bold" />
-
             <!-- 播放源 -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingTop="24dp"
+                android:paddingTop="8dp"
                 android:paddingBottom="10dp"
                 android:text="播放源（苹果CMS JSON 接口）"
                 android:textColor="@color/tx2"

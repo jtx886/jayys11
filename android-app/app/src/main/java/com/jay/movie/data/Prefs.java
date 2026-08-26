@@ -29,23 +29,15 @@ public class Prefs {
         return k.isEmpty() ? SEED_KEY : k;
     }
 
-    public static void setKey(Context c, String k) {
-        sp(c).edit().putString("tmdb_key", k == null ? "" : k.trim()).apply();
-    }
-
-    /** TMDB 接口地址（默认官方，可换镜像） */
+    /** TMDB 接口地址（默认官方） */
     public static String getApiBase(Context c) {
         String b = sp(c).getString("tmdb_base", "").trim();
         return b.isEmpty() ? "https://api.tmdb.org/3" : b;
     }
 
-    public static void setApiBase(Context c, String b) {
-        sp(c).edit().putString("tmdb_base", b == null ? "" : b.trim()).apply();
-    }
-
     /* ---------------- 播放源 ---------------- */
 
-    private static final String SEED_NAME = "默认资源站";
+    private static final String SEED_NAME = "杰同学";
     private static final String SEED_URL = "https://api.yyzy-tv.vip/inc/apijson.php";
 
     public static List<Models.Source> getSources(Context c) {
@@ -66,6 +58,15 @@ public class Prefs {
             list.add(s);
             saveSources(c, list);
         }
+        // 迁移：旧版默认源改名
+        boolean renamed = false;
+        for (Models.Source s : list) {
+            if ("默认资源站".equals(s.name)) {
+                s.name = SEED_NAME;
+                renamed = true;
+            }
+        }
+        if (renamed) saveSources(c, list);
         // 按默认源优先排序
         list.sort((a, b) -> (b.def ? 1 : 0) - (a.def ? 1 : 0));
         return list;
