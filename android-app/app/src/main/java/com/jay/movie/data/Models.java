@@ -40,6 +40,12 @@ public class Models {
         public String date = "";
     }
 
+    /** 季完整数据：季简介 + 集列表 */
+    public static class SeasonFull {
+        public String overview = "";
+        public List<Episode> episodes = new ArrayList<>();
+    }
+
     /** 播放源（对应网站后台 play_sources 表，本地化为 JSON 存储） */
     public static class Source {
         public String name = "";

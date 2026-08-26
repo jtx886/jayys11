@@ -25,10 +25,14 @@ public class Tmdb {
     }
 
     private static JSONObject req(String path, String params) {
+        return req(path, params, "zh-CN");
+    }
+
+    private static JSONObject req(String path, String params, String lang) {
         String key = Prefs.getKey(App.ctx());
         if (key.isEmpty()) return null;
         String base = Prefs.getApiBase(App.ctx());
-        String url = base + path + "?api_key=" + Http.enc(key) + "&language=zh-CN"
+        String url = base + path + "?api_key=" + Http.enc(key) + "&language=" + lang
                 + (params == null || params.isEmpty() ? "" : "&" + params);
         JSONObject o = Http.getJson(url);
         if (o != null && o.has("status_code")) return null; // 错误响应（无效 Key 等）
@@ -250,9 +254,50 @@ public class Tmdb {
 
     public static JSONObject detail(String type, int id) {
         if (!type.equals("movie") && !type.equals("tv")) return null;
-        return req("/" + type + "/" + id, "append_to_response=credits");
+        JSONObject o = req("/" + type + "/" + id, "append_to_response=credits");
+        if (o == null) return null;
+        // 中文简介缺失（TMDB 国产内容常见）→ 回退英文简介
+        String ov = o.optString("overview", "");
+        if (ov == null || ov.trim().isEmpty()) {
+            try {
+                JSONObject en = req("/" + type + "/" + id, "", "en-US");
+                if (en != null) {
+                    String enOv = en.optString("overview", "");
+                    if (enOv != null && !enOv.trim().isEmpty()) o.put("overview", enOv);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        return o;
     }
 
+    /** 季完整数据：季简介（中文缺失回退英文）+ 集列表 */
+    public static Models.SeasonFull seasonFull(int tvId, int seasonNo) {
+        JSONObject o = req("/tv/" + tvId + "/season/" + seasonNo, "");
+        if (o == null) return null;
+        Models.SeasonFull sf = new Models.SeasonFull();
+        sf.overview = o.optString("overview", "");
+        if (sf.overview == null || sf.overview.trim().isEmpty()) {
+            JSONObject en = req("/tv/" + tvId + "/season/" + seasonNo, "", "en-US");
+            if (en != null) sf.overview = en.optString("overview", "");
+        }
+        JSONArray eps = o.optJSONArray("episodes");
+        if (eps != null) {
+            for (int i = 0; i < eps.length(); i++) {
+                JSONObject e = eps.optJSONObject(i);
+                if (e == null) continue;
+                Models.Episode ep = new Models.Episode();
+                ep.num = e.optInt("episode_number", i + 1);
+                ep.name = e.optString("name", "");
+                ep.date = e.optString("air_date", "");
+                ep.still = img(e.optString("still_path", ""), "w300");
+                sf.episodes.add(ep);
+            }
+        }
+        return sf;
+    }
+
+    /** 仅集列表（播放页用，不做英文回退） */
     public static List<Models.Episode> season(int tvId, int seasonNo) {
         JSONObject o = req("/tv/" + tvId + "/season/" + seasonNo, "");
         List<Models.Episode> l = new ArrayList<>();

@@ -227,10 +227,12 @@ public class DetailActivity extends Activity {
     }
 
     private String genres = "";
+    private String baseOverview = "";   // 整剧简介（季简介为空时回退）
 
     private void render(String genres, String cast, String overview) {
         dStatus.setVisibility(View.GONE);
         this.genres = genres;
+        this.baseOverview = overview == null ? "" : overview;
         ImgLoader.load(backdrop, dBackdrop, R.drawable.ph_poster);
         dTitle.setText(title);
         dEn.setText(origTitle);
@@ -344,10 +346,19 @@ public class DetailActivity extends Activity {
 
         final int sn = seasonNo;
         new Thread(() -> {
-            List<Models.Episode> eps = Tmdb.season(id, sn);
+            Models.SeasonFull sf = Tmdb.seasonFull(id, sn);
             if (isFinishing()) return;
             runOnUiThread(() -> {
                 dStatus.setVisibility(View.GONE);
+                List<Models.Episode> eps = sf == null ? null : sf.episodes;
+                // 季简介优先（中文缺失已在 API 层回退英文），为空回退整剧简介
+                String so = sf == null ? "" : sf.overview;
+                if (so != null && !so.trim().isEmpty()) {
+                    dOverview.setText(so);
+                } else if (type.equals("tv")) {
+                    dOverview.setText(baseOverview == null || baseOverview.isEmpty()
+                            ? "暂无简介" : baseOverview);
+                }
                 episodes = eps == null ? new ArrayList<>() : eps;
                 if (episodes.isEmpty()) {
                     TextView t = new TextView(this);
