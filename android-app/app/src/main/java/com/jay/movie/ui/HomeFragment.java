@@ -37,8 +37,17 @@ public class HomeFragment extends Fragment {
 
     private static final int ROW_COUNT = 12;          // 每板块展示数量
     private static final int MAX_PAGE = 5;            // 换一批循环上限
-    private final ExecutorService pool = Executors.newFixedThreadPool(4);
+    private ExecutorService pool;                     // 懒创建，销毁后可重建
     private final AtomicInteger pending = new AtomicInteger();
+
+    /** 提交后台任务（线程池失效时自动重建，避免切换标签页回来后闪退） */
+    private void exec(Runnable r) {
+        if (pool == null || pool.isShutdown()) pool = Executors.newFixedThreadPool(4);
+        try {
+            pool.execute(r);
+        } catch (Exception ignored) {
+        }
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -73,7 +82,9 @@ public class HomeFragment extends Fragment {
 
     /** 加载某个板块当前页 */
     private void loadSection(final int idx) {
-        LinearLayout row = (LinearLayout) sections[idx].getChildAt(1);
+        // sections[idx] 子元素：0=标题行，1=HorizontalScrollView（内含横向 LinearLayout）
+        HorizontalScrollView hsv = (HorizontalScrollView) sections[idx].getChildAt(1);
+        LinearLayout row = (LinearLayout) hsv.getChildAt(0);
         row.removeAllViews();
         TextView loading = new TextView(getActivity());
         loading.setText("加载中…");
@@ -82,7 +93,7 @@ public class HomeFragment extends Fragment {
         loading.setPadding(30, 20, 30, 20);
         row.addView(loading);
 
-        pool.execute(() -> {
+        exec(() -> {
             List<Models.Media> list = null;
             try {
                 list = Tmdb.category(CATS[idx], pages[idx]);
@@ -199,11 +210,5 @@ public class HomeFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         root = null;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        pool.shutdownNow();
     }
 }
