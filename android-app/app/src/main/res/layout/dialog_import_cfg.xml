@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:lineSpacingExtra="4dp"
         android:paddingTop="8dp"
-        android:text="兼容影视仓/TVBox 配置（&quot;sites&quot; 数组）：自动导入 type=1 苹果CMS采集站点；也支持自定义 [{name,api}] 数组。xml/spider 等类型站点暂不支持。"
+        android:text="兼容影视仓/TVBox 配置：sites 数组（TVBox 标准）、urls 数组（影视仓单线路）、storeHouse 仓库、自定义 [{name,api}] 数组均可。自动导入 type=1 苹果CMS采集站点，xml/spider 等类型自动跳过。"
         android:textColor="@color/mut"
         android:textSize="11.5sp" />
 </LinearLayout>

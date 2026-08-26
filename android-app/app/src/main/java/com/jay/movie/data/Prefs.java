@@ -85,8 +85,9 @@ public class Prefs {
         public int added, dup, skipped;
     }
 
-    /** 解析影视仓/TVBox 配置，把 sites 中 type=1（苹果CMS JSON 采集）的站点导入播放源列表。
-     *  兼容三种输入：{"sites":[…]} 标准配置 / 裸数组 [{name,api|url}] 自定义 JSON。
+    /** 解析影视仓/TVBox 配置，把可用站点导入播放源列表。
+     *  兼容输入：{"sites":[…]} TVBox 标准 / {"urls":[…]} 影视仓单线路 /
+     *  裸数组 [{name,api|url}] 自定义 JSON / 单对象 {name,api|url}。
      *  返回 null = 内容不是有效配置 */
     public static ImportResult importTvBoxSites(Context c, String cfg) {
         if (c == null || cfg == null) return null;
@@ -97,43 +98,39 @@ public class Prefs {
         if (a < 0 || b <= a) return null;
         s = s.substring(a, b);
 
-        JSONArray sites;
+        JSONArray sites = null;
+        JSONObject obj = null;
         try {
             if (s.startsWith("[")) {
                 sites = new JSONArray(s);
             } else {
-                JSONObject o = new JSONObject(s);
-                sites = o.optJSONArray("sites");
+                obj = new JSONObject(s);
+                sites = obj.optJSONArray("sites");
+                if (sites == null) sites = obj.optJSONArray("urls");   // 影视仓「urls」单线路格式
             }
         } catch (Exception e) {
             return null;
         }
-        if (sites == null || sites.length() == 0) return null;
 
         ImportResult r = new ImportResult();
         List<Models.Source> list = getSources(c);
-        for (int i = 0; i < sites.length(); i++) {
-            JSONObject st = sites.optJSONObject(i);
-            if (st == null) { r.skipped++; continue; }
-            String name = st.optString("name", "").trim();
-            String api = st.optString("api", "").trim();
-            if (api.isEmpty()) api = st.optString("url", "").trim();   // 兼容自定义 JSON 用 url 字段
-            int type = st.optInt("type", 1);   // 无 type 字段的自定义 JSON 默认按 CMS 处理
-            if (name.isEmpty() || api.isEmpty() || type != 1
-                    || !api.toLowerCase().startsWith("http")) {
-                r.skipped++;
-                continue;
+
+        if (sites == null || sites.length() == 0) {
+            // 单对象：{"name":"…","api"/"url":"…"}
+            String name = obj == null ? "" : obj.optString("name", "").trim();
+            String api = obj == null ? "" : obj.optString("api", "").trim();
+            if (api.isEmpty() && obj != null) api = obj.optString("url", "").trim();
+            if (name.isEmpty() || api.isEmpty()) return null;
+            addImportSource(list, name, api, 1, r);
+        } else {
+            for (int i = 0; i < sites.length(); i++) {
+                JSONObject st = sites.optJSONObject(i);
+                if (st == null) { r.skipped++; continue; }
+                String name = st.optString("name", "").trim();
+                String api = st.optString("api", "").trim();
+                if (api.isEmpty()) api = st.optString("url", "").trim();   // 兼容 urls/自定义 JSON 用 url 字段
+                addImportSource(list, name, api, st.optInt("type", 1), r);  // 无 type 默认按 CMS 处理
             }
-            boolean exists = false;
-            for (Models.Source x : list) {
-                if (x.url.equals(api)) { exists = true; break; }
-            }
-            if (exists) { r.dup++; continue; }
-            Models.Source so = new Models.Source();
-            so.name = name;
-            so.url = api;
-            list.add(so);
-            r.added++;
         }
         if (r.added > 0) {
             // 确保仍有一个默认源
@@ -143,6 +140,24 @@ public class Prefs {
             saveSources(c, list);
         }
         return r;
+    }
+
+    /** 导入单个站点：type=1（CMS JSON 采集）且 http 开头才收，URL 去重 */
+    private static void addImportSource(List<Models.Source> list, String name, String api,
+                                        int type, ImportResult r) {
+        if (name.isEmpty() || api.isEmpty() || type != 1
+                || !api.toLowerCase().startsWith("http")) {
+            r.skipped++;
+            return;
+        }
+        for (Models.Source x : list) {
+            if (x.url.equals(api)) { r.dup++; return; }
+        }
+        Models.Source so = new Models.Source();
+        so.name = name;
+        so.url = api;
+        list.add(so);
+        r.added++;
     }
 
     /* ---------------- 收藏 ---------------- */

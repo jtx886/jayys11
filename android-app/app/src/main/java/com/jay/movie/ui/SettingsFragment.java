@@ -18,6 +18,9 @@ import com.jay.movie.api.Http;
 import com.jay.movie.data.Models;
 import com.jay.movie.data.Prefs;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.List;
 
 /** 设置页：播放源管理（TMDB Key 已内置，无需展示） */
@@ -164,19 +167,64 @@ public class SettingsFragment extends Fragment {
                     return;
                 }
             }
-            Prefs.ImportResult r = Prefs.importTvBoxSites(getActivity(), cfg);
-            String msg;
-            if (r == null) {
-                msg = "解析失败：不是有效的影视仓/TVBox 配置";
-            } else if (r.added == 0 && r.dup == 0 && r.skipped == 0) {
-                msg = "配置中没有可用站点";
-            } else {
-                msg = "导入完成：新增 " + r.added + " 个源"
-                        + (r.dup > 0 ? "，已存在 " + r.dup + " 个" : "")
-                        + (r.skipped > 0 ? "，跳过不支持类型（xml/spider 等）" + r.skipped + " 个" : "");
+            // 影视仓仓库格式：{"storeHouse":[{sourceName,sourceUrl}]} → 逐个拉取子配置再导入
+            JSONArray store = extractJsonArray(cfg, "storeHouse");
+            if (store != null && store.length() > 0) {
+                importStoreHouse(store);
+                return;
             }
-            runUi(msg);
+            runUi(fmtImport(Prefs.importTvBoxSites(getActivity(), cfg)));
         }).start();
+    }
+
+    /** 从文本裁剪出 JSON 主体并取指定数组字段（容错：前后带杂字符） */
+    private static JSONArray extractJsonArray(String text, String key) {
+        if (text == null) return null;
+        String s = text.trim();
+        int a = s.indexOf('{'), b = s.lastIndexOf('}');
+        if (a < 0 || b <= a) return null;
+        try {
+            return new JSONObject(s.substring(a, b)).optJSONArray(key);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** 影视仓仓库：逐个拉取 sourceUrl 指向的子配置并导入（上限 20 个防超时） */
+    private void importStoreHouse(JSONArray store) {
+        Prefs.ImportResult total = new Prefs.ImportResult();
+        int okCfg = 0, failCfg = 0;
+        int n = Math.min(store.length(), 20);
+        for (int i = 0; i < n; i++) {
+            JSONObject sh = store.optJSONObject(i);
+            String subUrl = sh == null ? "" : sh.optString("sourceUrl", "").trim();
+            if (subUrl.isEmpty() || !subUrl.toLowerCase().startsWith("http")) { failCfg++; continue; }
+            try {
+                String sub = Http.get(subUrl);
+                Prefs.ImportResult r = Prefs.importTvBoxSites(getActivity(), sub);
+                if (r != null && r.added + r.dup + r.skipped > 0) {
+                    total.added += r.added;
+                    total.dup += r.dup;
+                    total.skipped += r.skipped;
+                    okCfg++;
+                } else {
+                    failCfg++;
+                }
+            } catch (Exception e) {
+                failCfg++;
+            }
+        }
+        runUi("仓库导入完成：成功 " + okCfg + " 个仓库，新增 " + total.added + " 个源"
+                + (total.dup > 0 ? "，已存在 " + total.dup + " 个" : "")
+                + (failCfg > 0 ? "，失败 " + failCfg + " 个仓库" : ""));
+    }
+
+    private static String fmtImport(Prefs.ImportResult r) {
+        if (r == null) return "解析失败：不是有效的影视仓/TVBox 配置";
+        if (r.added == 0 && r.dup == 0 && r.skipped == 0) return "配置中没有可用站点";
+        return "导入完成：新增 " + r.added + " 个源"
+                + (r.dup > 0 ? "，已存在 " + r.dup + " 个" : "")
+                + (r.skipped > 0 ? "，跳过不支持类型（xml/spider 等）" + r.skipped + " 个" : "");
     }
 
     private void runUi(String msg) {
