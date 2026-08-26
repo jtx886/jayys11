@@ -44,7 +44,10 @@ public class SettingsFragment extends Fragment {
     private void saveKey() {
         final String k = keyInput.getText().toString().trim();
         if (k.isEmpty()) {
-            Toast.makeText(getActivity(), "Key 不能为空", Toast.LENGTH_SHORT).show();
+            // 清空 = 恢复使用内置 Key
+            Prefs.setKey(getActivity(), "");
+            keyInput.setText(Prefs.getKey(getActivity()));
+            Toast.makeText(getActivity(), "已恢复使用内置 Key", Toast.LENGTH_SHORT).show();
             return;
         }
         Prefs.setKey(getActivity(), k);

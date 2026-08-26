@@ -21,8 +21,12 @@ public class Prefs {
 
     /* ---------------- TMDB 配置 ---------------- */
 
+    /** 内置默认 Key（用户未自定义时使用，开箱即用） */
+    private static final String SEED_KEY = "cb44223c5dee5676ed3a839f42ed27e3";
+
     public static String getKey(Context c) {
-        return sp(c).getString("tmdb_key", "").trim();
+        String k = sp(c).getString("tmdb_key", "").trim();
+        return k.isEmpty() ? SEED_KEY : k;
     }
 
     public static void setKey(Context c, String k) {

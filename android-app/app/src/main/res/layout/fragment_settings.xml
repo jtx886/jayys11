@@ -31,7 +31,7 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="8dp"
                 android:paddingBottom="10dp"
-                android:text="TMDB API Key（必填，浏览和搜索影视需要）"
+                android:text="TMDB API Key（已内置，可换成自己的）"
                 android:textColor="@color/tx2"
                 android:textSize="13.5sp"
                 android:textStyle="bold" />
