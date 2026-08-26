@@ -52,7 +52,10 @@ public class DetailActivity extends Activity {
 
     private static class SeasonInfo {
         int no;
+        String date = "";      // 完整开播日 yyyy-MM-dd
         String year = "";
+        String poster = "";    // 该季海报
+        String episodes = "";  // 该季集数
     }
 
     private final List<SeasonInfo> seasons = new ArrayList<>();
@@ -78,8 +81,8 @@ public class DetailActivity extends Activity {
         type = getIntent().getStringExtra("type");
         if (type == null || (!type.equals("movie") && !type.equals("tv"))) type = "movie";
         id = getIntent().getIntExtra("id", 0);
-        seasonNo = getIntent().getIntExtra("season", 1);
-        if (seasonNo < 1) seasonNo = 1;
+        // 未指定季 = 自动定位最新已播季；指定了就直接用
+        seasonNo = getIntent().hasExtra("season") ? getIntent().getIntExtra("season", 1) : 0;
         if (id <= 0) {
             finish();
             return;
@@ -190,29 +193,49 @@ public class DetailActivity extends Activity {
                     if (no < 1) continue;
                     SeasonInfo si = new SeasonInfo();
                     si.no = no;
-                    String ad = s.optString("air_date", "");
-                    si.year = ad != null && ad.length() >= 4 ? ad.substring(0, 4) : "";
+                    si.date = s.optString("air_date", "");
+                    si.year = si.date != null && si.date.length() >= 4 ? si.date.substring(0, 4) : "";
+                    si.poster = Tmdb.img(s.optString("poster_path", ""), "w342");
                     seasons.add(si);
                 }
             }
         }
+        // 未指定季 → 定位最新已播季
+        if (type.equals("tv") && seasonNo < 1) seasonNo = latestSeasonNo();
 
         runOnUiThread(() -> render(genres.toString(), cast.toString(), overview));
     }
 
+    /** 最新已播季：从最后一季往前找，开播日非空且不晚于今天；全未播则第 1 季 */
+    private int latestSeasonNo() {
+        if (seasons.isEmpty()) return 1;
+        String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
+                .format(new java.util.Date());
+        for (int i = seasons.size() - 1; i >= 0; i--) {
+            SeasonInfo si = seasons.get(i);
+            if (si.date != null && !si.date.isEmpty() && si.date.compareTo(today) <= 0) {
+                return si.no;
+            }
+        }
+        return 1;
+    }
+
+    /** 当前季信息（无则 null） */
+    private SeasonInfo curSeason() {
+        for (SeasonInfo s : seasons) if (s.no == seasonNo) return s;
+        return null;
+    }
+
+    private String genres = "";
+
     private void render(String genres, String cast, String overview) {
         dStatus.setVisibility(View.GONE);
-        ImgLoader.load(poster, dPoster, R.drawable.ph_poster);
+        this.genres = genres;
         ImgLoader.load(backdrop, dBackdrop, R.drawable.ph_poster);
         dTitle.setText(title);
         dEn.setText(origTitle);
 
-        StringBuilder meta = new StringBuilder();
-        if (!year.isEmpty()) meta.append(year);
-        if (!genres.isEmpty()) meta.append(meta.length() > 0 ? " · " : "").append(genres);
-        if (rating > 0) meta.append(meta.length() > 0 ? " · " : "").append("★ ").append(String.format(java.util.Locale.CHINA, "%.1f", rating));
-        if (type.equals("tv") && !seasons.isEmpty()) meta.append(" · ").append(seasons.size()).append("季");
-        dMeta.setText(meta.toString());
+        updateSeasonMeta();
         dOverview.setText(overview == null || overview.isEmpty() ? "暂无简介" : overview);
         dCast.setText(cast.isEmpty() ? "" : "主演：" + cast);
 
@@ -240,13 +263,38 @@ public class DetailActivity extends Activity {
         if (type.equals("tv")) loadSeason();
     }
 
+    /** 年份/海报跟随当前季：剧集显示所选季年份与季海报（无季数据时回退整剧） */
+    private void updateSeasonMeta() {
+        SeasonInfo cur = type.equals("tv") ? curSeason() : null;
+
+        // 海报：季海报优先
+        if (cur != null && !cur.poster.isEmpty()) {
+            ImgLoader.load(cur.poster, dPoster, R.drawable.ph_poster);
+        } else {
+            ImgLoader.load(poster, dPoster, R.drawable.ph_poster);
+        }
+
+        // 年份：所选季开播年
+        String y = cur != null && !cur.year.isEmpty() ? cur.year : year;
+
+        StringBuilder meta = new StringBuilder();
+        if (!y.isEmpty()) meta.append(y);
+        if (!genres.isEmpty()) meta.append(meta.length() > 0 ? " · " : "").append(genres);
+        if (rating > 0) meta.append(meta.length() > 0 ? " · " : "").append("★ ").append(String.format(java.util.Locale.CHINA, "%.1f", rating));
+        if (type.equals("tv") && !seasons.isEmpty()) meta.append(" · ").append(seasons.size()).append("季");
+        if (cur != null && !y.equals(year)) meta.append(" · 当前第 ").append(cur.no).append(" 季");
+        dMeta.setText(meta.toString());
+    }
+
     private void renderSeasonChips() {
         seasonFlow.removeAllViews();
         for (SeasonInfo s : seasons) {
             TextView chip = makeChip("第 " + s.no + " 季" + (s.year.isEmpty() ? "" : " · " + s.year), s.no == seasonNo);
             chip.setOnClickListener(v -> {
+                if (s.no == seasonNo) return;
                 seasonNo = s.no;
                 renderSeasonChips();
+                updateSeasonMeta();
                 loadSeason();
             });
             seasonFlow.addView(chip);
