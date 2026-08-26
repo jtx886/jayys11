@@ -52,6 +52,16 @@
                 android:textColor="@color/tx"
                 android:textStyle="bold" />
 
+            <Button
+                android:id="@+id/btnImportCfg"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/btn_ghost"
+                android:text="导入影视仓配置（TVBox JSON）"
+                android:textColor="@color/tx"
+                android:textStyle="bold" />
+
             <!-- 说明 -->
             <TextView
                 android:layout_width="match_parent"

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="14dp"
+        android:text="导入播放源配置"
+        android:textColor="@color/tx"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/cfgInput"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:background="@drawable/btn_ghost"
+        android:gravity="top"
+        android:hint="粘贴配置链接（http/https）\n或影视仓/TVBox 完整 JSON"
+        android:inputType="textMultiLine|textNoSuggestions"
+        android:paddingStart="14dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="14dp"
+        android:textColor="@color/tx"
+        android:textColorHint="#525b6e"
+        android:textSize="13.5sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lineSpacingExtra="4dp"
+        android:paddingTop="8dp"
+        android:text="兼容影视仓/TVBox 配置（&quot;sites&quot; 数组）：自动导入 type=1 苹果CMS采集站点；也支持自定义 [{name,api}] 数组。xml/spider 等类型站点暂不支持。"
+        android:textColor="@color/mut"
+        android:textSize="11.5sp" />
+</LinearLayout>

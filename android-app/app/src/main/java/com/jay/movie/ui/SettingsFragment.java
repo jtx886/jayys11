@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jay.movie.R;
+import com.jay.movie.api.Http;
 import com.jay.movie.data.Models;
 import com.jay.movie.data.Prefs;
 
@@ -30,6 +31,7 @@ public class SettingsFragment extends Fragment {
         srcList = root.findViewById(R.id.srcList);
 
         root.findViewById(R.id.btnAddSrc).setOnClickListener(v -> showAddDialog());
+        root.findViewById(R.id.btnImportCfg).setOnClickListener(v -> showImportDialog());
 
         renderSources();
         return root;
@@ -124,5 +126,64 @@ public class SettingsFragment extends Fragment {
                 })
                 .setNegativeButton("取消", null)
                 .show();
+    }
+
+    /* ---------------- 影视仓（TVBox）配置导入 ---------------- */
+
+    private void showImportDialog() {
+        if (getActivity() == null) return;
+        View v = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_import_cfg, null);
+        EditText et = v.findViewById(R.id.cfgInput);
+
+        new AlertDialog.Builder(getActivity())
+                .setView(v)
+                .setPositiveButton("导入", (DialogInterface d, int w) -> {
+                    String input = et.getText().toString().trim();
+                    if (input.isEmpty()) {
+                        Toast.makeText(getActivity(), "请粘贴配置链接或 JSON 内容", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    doImport(input);
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void doImport(String input) {
+        Toast.makeText(getActivity(), "正在导入配置…", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            String cfg = input;
+            if (input.toLowerCase().startsWith("http")) {   // 链接 → 先拉取内容
+                try {
+                    cfg = Http.get(input);
+                } catch (Exception e) {
+                    cfg = null;
+                }
+                if (cfg == null || cfg.trim().isEmpty()) {
+                    runUi("配置链接获取失败，请检查地址");
+                    return;
+                }
+            }
+            Prefs.ImportResult r = Prefs.importTvBoxSites(getActivity(), cfg);
+            String msg;
+            if (r == null) {
+                msg = "解析失败：不是有效的影视仓/TVBox 配置";
+            } else if (r.added == 0 && r.dup == 0 && r.skipped == 0) {
+                msg = "配置中没有可用站点";
+            } else {
+                msg = "导入完成：新增 " + r.added + " 个源"
+                        + (r.dup > 0 ? "，已存在 " + r.dup + " 个" : "")
+                        + (r.skipped > 0 ? "，跳过不支持类型（xml/spider 等）" + r.skipped + " 个" : "");
+            }
+            runUi(msg);
+        }).start();
+    }
+
+    private void runUi(String msg) {
+        if (getActivity() == null) return;
+        getActivity().runOnUiThread(() -> {
+            renderSources();
+            Toast.makeText(getActivity(), msg, Toast.LENGTH_LONG).show();
+        });
     }
 }

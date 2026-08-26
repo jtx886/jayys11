@@ -78,6 +78,73 @@ public class Prefs {
         sp(c).edit().putString("sources_json", a.toString()).apply();
     }
 
+    /* ---------------- 影视仓（TVBox）配置导入 ---------------- */
+
+    /** 导入结果：added=新增 dup=已存在 skipped=不支持类型（xml/spider 等） */
+    public static class ImportResult {
+        public int added, dup, skipped;
+    }
+
+    /** 解析影视仓/TVBox 配置，把 sites 中 type=1（苹果CMS JSON 采集）的站点导入播放源列表。
+     *  兼容三种输入：{"sites":[…]} 标准配置 / 裸数组 [{name,api|url}] 自定义 JSON。
+     *  返回 null = 内容不是有效配置 */
+    public static ImportResult importTvBoxSites(Context c, String cfg) {
+        if (c == null || cfg == null) return null;
+        String s = cfg.trim();
+        // 防御性裁剪出 JSON 主体（部分接口返回带杂字符）
+        int a = s.indexOf('{'), b = s.lastIndexOf('}');
+        if (s.startsWith("[")) { a = 0; b = s.length(); }
+        if (a < 0 || b <= a) return null;
+        s = s.substring(a, b);
+
+        JSONArray sites;
+        try {
+            if (s.startsWith("[")) {
+                sites = new JSONArray(s);
+            } else {
+                JSONObject o = new JSONObject(s);
+                sites = o.optJSONArray("sites");
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        if (sites == null || sites.length() == 0) return null;
+
+        ImportResult r = new ImportResult();
+        List<Models.Source> list = getSources(c);
+        for (int i = 0; i < sites.length(); i++) {
+            JSONObject st = sites.optJSONObject(i);
+            if (st == null) { r.skipped++; continue; }
+            String name = st.optString("name", "").trim();
+            String api = st.optString("api", "").trim();
+            if (api.isEmpty()) api = st.optString("url", "").trim();   // 兼容自定义 JSON 用 url 字段
+            int type = st.optInt("type", 1);   // 无 type 字段的自定义 JSON 默认按 CMS 处理
+            if (name.isEmpty() || api.isEmpty() || type != 1
+                    || !api.toLowerCase().startsWith("http")) {
+                r.skipped++;
+                continue;
+            }
+            boolean exists = false;
+            for (Models.Source x : list) {
+                if (x.url.equals(api)) { exists = true; break; }
+            }
+            if (exists) { r.dup++; continue; }
+            Models.Source so = new Models.Source();
+            so.name = name;
+            so.url = api;
+            list.add(so);
+            r.added++;
+        }
+        if (r.added > 0) {
+            // 确保仍有一个默认源
+            boolean hasDef = false;
+            for (Models.Source x : list) if (x.def) hasDef = true;
+            if (!hasDef && !list.isEmpty()) list.get(0).def = true;
+            saveSources(c, list);
+        }
+        return r;
+    }
+
     /* ---------------- 收藏 ---------------- */
 
     public static List<Models.Media> getFavs(Context c) {
