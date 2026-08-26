@@ -71,6 +71,14 @@ public class Tmdb {
 
     /* ---------------- 季级搜索（剧集按季展开成独立条目） ---------------- */
 
+    /** 输入联想：取搜索前 8 条结果的标题（不拉详情，轻量） */
+    public static List<Models.Media> suggest(String query) {
+        List<Models.Media> base = search(query, 1);
+        if (base == null) return null;
+        if (base.size() > 8) base = new ArrayList<>(base.subList(0, 8));
+        return base;
+    }
+
     /** 季数关键词：第2季 / 第二季 / 第2部 / 2季 / S2 */
     private static final Pattern P_NUM_SEASON = Pattern.compile("(\\d{1,2})\\s*季");
     private static final Pattern P_CN_SEASON = Pattern.compile("第\\s*([0-9一二三四五六七八九十两]+)\\s*[季部]");
@@ -201,7 +209,7 @@ public class Tmdb {
         m.title = base + " 第" + no + "季";
         m.origTitle = tv.origTitle;
         String pp = s.optString("poster_path", "");
-        m.poster = pp == null || pp.isEmpty() ? tv.poster : img(pp, "w342");
+        m.poster = pp == null || pp.isEmpty() ? tv.poster : img(pp, "w185");
         m.backdrop = tv.backdrop;
         String ad = s.optString("air_date", "");
         m.year = ad != null && ad.length() >= 4 ? ad.substring(0, 4) : tv.year;
@@ -297,7 +305,7 @@ public class Tmdb {
             m.origTitle = r.optString("original_name", "");
             m.year = sub(r.optString("first_air_date", ""));
         }
-        m.poster = img(r.optString("poster_path", ""), "w342");
+        m.poster = img(r.optString("poster_path", ""), "w185");
         m.backdrop = img(r.optString("backdrop_path", ""), "w780");
         m.rating = r.optDouble("vote_average", 0);
         return m;

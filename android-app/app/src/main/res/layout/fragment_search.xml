@@ -70,6 +70,30 @@
             android:paddingTop="14dp"
             android:paddingBottom="20dp">
 
+            <!-- 搜索建议（输入时实时出现） -->
+            <LinearLayout
+                android:id="@+id/sugSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="16dp"
+                    android:paddingBottom="4dp"
+                    android:text="猜你想搜"
+                    android:textColor="@color/tx2"
+                    android:textSize="13.5sp"
+                    android:textStyle="bold" />
+
+                <com.jay.movie.ui.FlowLayout
+                    android:id="@+id/sugFlow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
             <!-- 热门搜索 -->
             <TextView
                 android:layout_width="wrap_content"

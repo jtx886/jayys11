@@ -42,6 +42,14 @@ public class SearchFragment extends Fragment {
     private final List<Models.Media> items = new ArrayList<>();
     private boolean loading;
 
+    /* ---------------- 输入联想 ---------------- */
+
+    private FlowLayout sugFlow;
+    private android.os.Handler sugHandler;
+    private Runnable sugPending;
+    private String lastSug = "";
+    private int sugSeq = 0;                 // 联想请求序号，旧结果丢弃
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         root = inflater.inflate(R.layout.fragment_search, container, false);
@@ -50,6 +58,8 @@ public class SearchFragment extends Fragment {
         status = root.findViewById(R.id.sStatus);
         hintBox = root.findViewById(R.id.hintBox);
         histSection = root.findViewById(R.id.histSection);
+        sugFlow = root.findViewById(R.id.sugFlow);
+        sugHandler = new android.os.Handler();
         Button btn = root.findViewById(R.id.sBtn);
         Button clear = root.findViewById(R.id.btnClearHist);
 
@@ -67,6 +77,22 @@ public class SearchFragment extends Fragment {
                 return true;
             }
             return false;
+        });
+
+        // 输入即联想：本地历史/热门词前缀匹配 + TMDB 实时建议
+        input.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int a, int b, int c) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int a, int b, int c) {
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                onSuggest(s.toString().trim());
+            }
         });
 
         clear.setOnClickListener(v -> {
@@ -88,6 +114,81 @@ public class SearchFragment extends Fragment {
             input.setText(w);
             doSearch();
         }));
+    }
+
+    /* ---------------- 输入联想 ---------------- */
+
+    /** 输入变化：先展示本地匹配，再异步拉 TMDB 建议（400ms 防抖） */
+    private void onSuggest(final String q) {
+        if (sugHandler == null) return;
+        if (sugPending != null) sugHandler.removeCallbacks(sugPending);
+
+        View sugSection = root.findViewById(R.id.sugSection);
+        if (q.isEmpty()) {
+            sugSection.setVisibility(View.GONE);
+            sugFlow.removeAllViews();
+            lastSug = "";
+            return;
+        }
+
+        // 1) 本地（历史+热门词）前缀/包含匹配，立即显示
+        java.util.LinkedHashSet<String> local = new java.util.LinkedHashSet<>();
+        if (getActivity() != null) {
+            for (String s : Prefs.getSearches(getActivity())) {
+                if (s.length() > q.length() && s.contains(q)) local.add(s);
+            }
+        }
+        for (String s : HOT_WORDS) {
+            if (s.length() > q.length() && s.contains(q)) local.add(s);
+        }
+        renderSug(local);
+
+        // 2) TMDB 远程联想（防抖 400ms）
+        final int seq = ++sugSeq;
+        sugPending = () -> {
+            if (root == null || seq != sugSeq) return;
+            new Thread(() -> {
+                List<Models.Media> remote = null;
+                try {
+                    remote = Tmdb.suggest(q);
+                } catch (Exception ignored) {
+                }
+                if (root == null || seq != sugSeq) return;
+                final List<Models.Media> fr = remote;
+                root.post(() -> {
+                    if (root == null || seq != sugSeq || fr == null) return;
+                    if (q.equals(input.getText().toString().trim()) == false) return;
+                    java.util.LinkedHashSet<String> all = new java.util.LinkedHashSet<>();
+                    for (Models.Media m : fr) {
+                        String t = m.title == null || m.title.isEmpty() ? m.origTitle : m.title;
+                        if (!t.isEmpty() && !t.equals(q)) all.add(t);
+                    }
+                    all.addAll(local);
+                    renderSug(all);
+                });
+            }).start();
+        };
+        sugHandler.postDelayed(sugPending, 400);
+    }
+
+    /** 渲染联想词 */
+    private void renderSug(java.util.LinkedHashSet<String> words) {
+        if (root == null || sugFlow == null) return;
+        View sugSection = root.findViewById(R.id.sugSection);
+        sugFlow.removeAllViews();
+        if (words == null || words.isEmpty()) {
+            sugSection.setVisibility(words == null ? View.GONE : sugSection.getVisibility());
+            return;
+        }
+        sugSection.setVisibility(View.VISIBLE);
+        int n = 0;
+        for (final String w : words) {
+            if (n++ >= 8) break;
+            sugFlow.addView(makeChip(w, false, v -> {
+                input.setText(w);
+                doSearch();
+            }));
+        }
     }
 
     /** 搜索历史 */
@@ -140,6 +241,7 @@ public class SearchFragment extends Fragment {
         items.clear();
         adapter.notifyDataSetChanged();
         hintBox.setVisibility(View.GONE);
+        root.findViewById(R.id.sugSection).setVisibility(View.GONE);
         grid.setVisibility(View.GONE);
         status.setVisibility(View.VISIBLE);
         status.setText("搜索中…");
