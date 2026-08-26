@@ -69,12 +69,12 @@ public class FavFragment extends Fragment {
         histList.setAdapter(histAdapter);
         histList.setOnItemClickListener((AdapterView<?> parent, View v, int position, long id) -> {
             Models.Hist h = hists.get(position);
-            if (h.type.equals("tv")) {
-                PlayerActivity.start(getActivity(), h.type, h.id, h.season,
-                        h.episode > 0 ? h.episode : 1, h.title, h.origTitle, h.year, "orig", "", 0);
-            } else {
-                PlayerActivity.start(getActivity(), h.type, h.id, 1, 0, h.title, h.origTitle, h.year, "orig", "", 0);
-            }
+            // 未看完则续播（看完的从头播），沿用上次音轨
+            long pos = h.pos > 10 && (h.dur <= 0 || h.pos < h.dur - 15) ? h.pos : 0;
+            String tr = h.track == null || h.track.isEmpty() ? "orig" : h.track;
+            PlayerActivity.start(getActivity(), h.type, h.id, Math.max(1, h.season),
+                    h.episode > 0 ? h.episode : 1, h.title, h.origTitle, h.year,
+                    tr, "", 0, h.poster, pos);
         });
 
         tabFav.setOnClickListener(v -> switchTab(true));
@@ -165,7 +165,10 @@ public class FavFragment extends Fragment {
 
             ImgLoader.load(h.poster, img, R.drawable.ph_poster);
             title.setText(h.title);
-            sub.setText(h.type.equals("tv") ? "看到第 " + h.season + " 季 第 " + h.episode + " 集" : "电影");
+            String subText = h.type.equals("tv") ? "看到第 " + h.season + " 季 第 " + h.episode + " 集" : "电影";
+            String prog = Prefs.histProgress(h);
+            if (!prog.isEmpty()) subText += " · " + prog;   // 例如 12:34/45:10
+            sub.setText(subText);
             time.setText(Prefs.timeAgo(h.ts));
             return v;
         }

@@ -137,14 +137,18 @@ public class Prefs {
 
     /* ---------------- 观看历史 ---------------- */
 
-    /** 记录/更新观看：同一部剧同一季只保留一条（更新集数与时间），上限 100 条 */
+    /** 记录/更新观看：同一部剧同一季只保留一条（更新集数/进度/时间），上限 100 条。
+     *  poster 为空时沿用旧条目海报（播放页没有海报时避免覆盖成空） */
     public static void addHist(Context c, String type, int id, String title, String poster,
-                               String origTitle, String year, int season, int episode) {
+                               String origTitle, String year, int season, int episode,
+                               long pos, long dur, String track) {
         List<Models.Hist> l = Models.Hist.list(loadHistArr(c));
+        Models.Hist old = null;
         for (int i = 0; i < l.size(); i++) {
             Models.Hist h = l.get(i);
             if (h.id == id && h.type.equals(type)
                     && (type.equals("movie") || h.season == season)) {
+                old = h;
                 l.remove(i);
                 break;
             }
@@ -153,11 +157,15 @@ public class Prefs {
         h.type = type;
         h.id = id;
         h.title = title;
-        h.poster = poster;
+        // 海报为空沿用旧海报
+        h.poster = poster == null || poster.isEmpty() ? (old == null ? "" : old.poster) : poster;
         h.origTitle = origTitle;
         h.year = year;
         h.season = Math.max(1, season);
         h.episode = episode;
+        h.pos = pos;
+        h.dur = dur;
+        h.track = track == null || track.isEmpty() ? "orig" : track;
         h.ts = System.currentTimeMillis();
         l.add(0, h);
         while (l.size() > 100) l.remove(l.size() - 1);
@@ -166,6 +174,14 @@ public class Prefs {
 
     public static List<Models.Hist> getHist(Context c) {
         return Models.Hist.list(loadHistArr(c));
+    }
+
+    /** 查某部影视的最新观看记录（不看季，取最近一条） */
+    public static Models.Hist findHist(Context c, String type, int id) {
+        for (Models.Hist h : Models.Hist.list(loadHistArr(c))) {
+            if (h.id == id && h.type.equals(type)) return h;
+        }
+        return null;
     }
 
     public static void clearHist(Context c) {
@@ -219,7 +235,8 @@ public class Prefs {
                 o.put("type", h.type).put("id", h.id).put("title", h.title)
                         .put("poster", h.poster).put("origTitle", h.origTitle)
                         .put("year", h.year).put("season", h.season)
-                        .put("episode", h.episode).put("ts", h.ts);
+                        .put("episode", h.episode).put("ts", h.ts)
+                        .put("pos", h.pos).put("dur", h.dur).put("track", h.track);
             } catch (Exception ignored) {
             }
             a.put(o);
@@ -228,6 +245,21 @@ public class Prefs {
     }
 
     /* ---------------- 时间格式化 ---------------- */
+
+    /** 秒 → "mm:ss" / "h:mm:ss" */
+    public static String fmtPos(long sec) {
+        if (sec <= 0) return "";
+        long h = sec / 3600, m = (sec % 3600) / 60, s = sec % 60;
+        return h > 0 ? String.format(java.util.Locale.CHINA, "%d:%02d:%02d", h, m, s)
+                : String.format(java.util.Locale.CHINA, "%02d:%02d", m, s);
+    }
+
+    /** 历史条目进度文案：看了一半显示"12:34/45:10"，看完/没看显示空 */
+    public static String histProgress(Models.Hist h) {
+        if (h == null || h.pos < 10 || h.dur <= 0) return "";
+        if (h.pos >= h.dur - 15) return "";       // 已看完
+        return fmtPos(h.pos) + "/" + fmtPos(h.dur);
+    }
 
     public static String timeAgo(long ts) {
         if (ts <= 0) return "";

@@ -33,12 +33,14 @@ public class PlayerActivity extends Activity {
 
     public static void start(Context c, String type, int id, int season, int ep,
                              String title, String origTitle, String year,
-                             String track, String prefSrc, int epCount) {
+                             String track, String prefSrc, int epCount,
+                             String poster, long resumePos) {
         Intent i = new Intent(c, PlayerActivity.class);
         i.putExtra("type", type).putExtra("id", id).putExtra("season", season)
                 .putExtra("ep", ep).putExtra("title", title).putExtra("orig", origTitle)
                 .putExtra("year", year).putExtra("track", track).putExtra("prefSrc", prefSrc)
-                .putExtra("epCount", epCount);
+                .putExtra("epCount", epCount).putExtra("poster", poster)
+                .putExtra("pos", resumePos);
         c.startActivity(i);
     }
 
@@ -47,6 +49,86 @@ public class PlayerActivity extends Activity {
     private String type = "movie";
     private int mediaId, season, ep, epCount;
     private String title = "", origTitle = "", year = "", track = "orig", prefSrc = "";
+    private String poster = "";
+
+    /* ---------------- 续播进度 ---------------- */
+    private long resumePos;      // 本次要跳转到的位置（秒）
+    private long curPos, curDur; // JS 轮询到的实时进度
+    private int playGen;         // 播放代数：换集后丢弃旧集仍在途的轮询结果
+    private final android.os.Handler handler = new android.os.Handler();
+
+    /** 轮询播放进度（每 5 秒读一次 video 元素，存入观看历史） */
+    private static final String JS_POLL =
+            "(function(){var v=document.querySelector('video');" +
+                    "return v?(v.currentTime+'/'+(isFinite(v.duration)?v.duration:0)+'/'+v.paused)" +
+                    ":'0/0/true'})()";
+
+    /** 健壮续播：等视频元数据就绪后再 seek（页面自身 ready 时 seek 对 HLS 常失效）。
+     *  TARGET 为 null 时回退用播放器 localStorage 里保存的进度 */
+    private static String seekJs(Long target) {
+        return "(function(){var t=" + (target == null ? "null" : target) + ";var n=0;" +
+                "var timer=setInterval(function(){" +
+                "var v=document.querySelector('video');" +
+                "if(v&&v.readyState>=1&&v.duration>0&&isFinite(v.duration)){" +
+                "var p=(t!=null)?t:(parseFloat(localStorage.getItem(window.video_hash||''))||0);" +
+                "if(p>5&&p<v.duration-10){v.currentTime=p;try{window.player.play()}catch(e){v.play()}}" +
+                "clearInterval(timer)}else if(++n>120){clearInterval(timer)}},500)})()";
+    }
+
+    /* ---------------- 进度轮询：每 5 秒读取播放位置并写入观看历史 ---------------- */
+
+    private final Runnable pollTask = new Runnable() {
+        @Override
+        public void run() {
+            if (isFinishing() || webView == null) return;
+            final int gen = playGen;
+            webView.evaluateJavascript(JS_POLL, res -> parsePoll(res, gen));
+            handler.postDelayed(this, 5000);
+        }
+    };
+
+    private void startPoll() {
+        handler.removeCallbacks(pollTask);
+        handler.postDelayed(pollTask, 5000);
+    }
+
+    private void stopPoll() {
+        handler.removeCallbacks(pollTask);
+    }
+
+    /** 解析 JS 轮询结果 "位置/时长/是否暂停"，写入观看历史（gen 不匹配 = 旧集的过期结果，丢弃） */
+    private void parsePoll(String res, int gen) {
+        if (res == null || isFinishing() || gen != playGen) return;
+        try {
+            String[] p = res.replace("\"", "").trim().split("/");
+            if (p.length < 2) return;
+            long pos = (long) Double.parseDouble(p[0]);
+            long dur = (long) Double.parseDouble(p[1]);
+            if (dur <= 0 || pos <= 3) return;
+            curPos = pos;
+            curDur = dur;
+            Prefs.addHist(this, type, mediaId, title, poster, origTitle, year,
+                    type.equals("tv") ? season : 1, ep, pos, dur, track);
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** 退出/切后台时保存当前进度到观看历史 */
+    private void saveProgress() {
+        if (curPos > 3 && curDur > 0) {
+            Prefs.addHist(this, type, mediaId, title, poster, origTitle, year,
+                    type.equals("tv") ? season : 1, ep, curPos, curDur, track);
+        }
+    }
+
+    /** 换集：清空进度并使旧轮询失效，从头播放 */
+    private void resetProgress() {
+        playGen++;
+        resumePos = 0;
+        curPos = 0;
+        curDur = 0;
+    }
+
     private List<Models.Source> sources;
 
     private LinearLayout playerRoot;
@@ -78,8 +160,11 @@ public class PlayerActivity extends Activity {
         year = getIntent().getStringExtra("year");
         track = getIntent().getStringExtra("track");
         prefSrc = getIntent().getStringExtra("prefSrc");
+        poster = getIntent().getStringExtra("poster");
+        resumePos = getIntent().getLongExtra("pos", 0);
         if (track == null) track = "orig";
         if (title == null) title = "";
+        if (poster == null) poster = "";
 
         sources = Prefs.getSources(this);
 
@@ -116,12 +201,14 @@ public class PlayerActivity extends Activity {
         btnPrev.setOnClickListener(v -> {
             if (ep > 1) {
                 ep--;
+                resetProgress();   // 换集从头看
                 resolve();
             }
         });
         btnNext.setOnClickListener(v -> {
             if (epCount <= 0 || ep < epCount) {
                 ep++;
+                resetProgress();   // 换集从头看
                 resolve();
             }
         });
@@ -150,7 +237,22 @@ public class PlayerActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                if (url == null || !url.startsWith(PLAYER_BASE)) return;
+                // 注入健壮续播：指定位置优先，否则用播放器 localStorage 进度
+                final long target = resumePos;
+                if (target > 5) {
+                    resumePos = 0;   // 只对本次加载生效，换集后从头播
+                    view.evaluateJavascript(seekJs(target), null);
+                    pInfo.append("\n已从上次进度 " + Prefs.fmtPos(target) + " 续播");
+                } else {
+                    view.evaluateJavascript(seekJs(null), null);
+                }
+                startPoll();
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
@@ -224,9 +326,12 @@ public class PlayerActivity extends Activity {
         pLoad.setVisibility(View.GONE);
 
         if (r.ok) {
-            // 记录观看历史
-            Prefs.addHist(this, type, mediaId, title, "", origTitle, year,
-                    type.equals("tv") ? season : 1, ep);
+            // 记录观看历史（保留当前进度与时长，之后由轮询持续更新）
+            long pos0 = curPos > 5 ? curPos : Math.max(resumePos, 0);
+            Models.Hist oh = Prefs.findHist(this, type, mediaId);
+            long dur0 = curDur > 0 ? curDur : (oh == null ? 0 : oh.dur);
+            Prefs.addHist(this, type, mediaId, title, poster, origTitle, year,
+                    type.equals("tv") ? season : 1, ep, pos0, dur0, track);
 
             pSource.setText("片源：" + r.sourceName);
             StringBuilder info = new StringBuilder();
@@ -267,6 +372,7 @@ public class PlayerActivity extends Activity {
             TextView chip = makeChip(s.name + (s.name.equals(usedName) ? " ✓" : ""), s.name.equals(usedName));
             chip.setOnClickListener(v -> {
                 prefSrc = s.url;
+                if (curPos > 5) resumePos = curPos;   // 换源后回到当前进度
                 resolve();
             });
             srcFlow.addView(chip);
@@ -301,6 +407,7 @@ public class PlayerActivity extends Activity {
             chip.setOnClickListener(v -> {
                 if (num != ep) {
                     ep = num;
+                    resetProgress();   // 换集从头看
                     resolve();
                 }
             });
@@ -352,6 +459,7 @@ public class PlayerActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        saveProgress();
         if (webView != null) webView.onPause();
     }
 
@@ -363,6 +471,8 @@ public class PlayerActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        stopPoll();
+        saveProgress();
         if (webView != null) webView.destroy();
         super.onDestroy();
     }

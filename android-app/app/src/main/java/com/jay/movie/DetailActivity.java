@@ -124,7 +124,7 @@ public class DetailActivity extends Activity {
             btnFav.setText(faved ? "已收藏" : "收藏");
             Toast.makeText(this, faved ? "已加入收藏" : "已取消收藏", Toast.LENGTH_SHORT).show();
         });
-        btnPlay.setOnClickListener(v -> play(type.equals("tv") ? 1 : 0));
+        btnPlay.setOnClickListener(v -> playMain());
     }
 
     private void loadDetail() {
@@ -242,7 +242,17 @@ public class DetailActivity extends Activity {
         dCast.setText(cast.isEmpty() ? "" : "主演：" + cast);
 
         btnFav.setText(Prefs.hasFav(this, type, id) ? "已收藏" : "收藏");
-        btnPlay.setText(type.equals("tv") ? "播放第 1 集" : "立即播放");
+
+        // 历史记录：沿用上次音轨 + 播放按钮显示续播信息
+        Models.Hist h = Prefs.findHist(this, type, id);
+        if (h != null && (h.track.equals("dub") || h.track.equals("orig"))) track = h.track;
+        if (h != null && h.pos > 10 && (h.dur <= 0 || h.pos < h.dur - 15)) {
+            String label = type.equals("tv") && h.episode > 0 ? "续播第 " + h.episode + " 集" : "续播";
+            String pt = Prefs.fmtPos(h.pos);
+            btnPlay.setText(label + (pt.isEmpty() ? "" : " · " + pt));
+        } else {
+            btnPlay.setText(type.equals("tv") ? "播放第 1 集" : "立即播放");
+        }
 
         // 季选择：仅多季剧集显示
         if (type.equals("tv") && seasons.size() > 1) {
@@ -384,12 +394,44 @@ public class DetailActivity extends Activity {
         }
     }
 
+    /** 主播放按钮：有可续播的记录时回到上次的季/集/进度，否则从头播 */
+    private void playMain() {
+        Models.Hist h = Prefs.findHist(this, type, id);
+        boolean resumable = h != null && h.pos > 10 && (h.dur <= 0 || h.pos < h.dur - 15);
+        if (!resumable) {
+            play(type.equals("tv") ? 1 : 0);
+            return;
+        }
+        if (type.equals("tv") && h.season != seasonNo) {
+            // 回到上次观看的季（剧集列表异步加载中，集数由播放页自行获取）
+            seasonNo = h.season;
+            renderSeasonChips();
+            updateSeasonMeta();
+            loadSeason();
+            play(h.episode > 0 ? h.episode : 1, 0);
+        } else {
+            play(h.episode > 0 ? h.episode : (type.equals("tv") ? 1 : 0));
+        }
+    }
+
     /** 去播放页（同时记录观看历史） */
     private void play(int ep) {
-        Prefs.addHist(this, type, id, title, poster, origTitle, year,
-                type.equals("tv") ? seasonNo : 1, ep);
-        PlayerActivity.start(this, type, id, type.equals("tv") ? seasonNo : 1, ep,
-                title, origTitle, year, track, prefSrc, episodes.size());
+        play(ep, episodes.size());
+    }
+
+    /** 去播放页（同时记录观看历史；同一集有未看完的进度则续播） */
+    private void play(int ep, int epCount) {
+        int sn = type.equals("tv") ? seasonNo : 1;
+        long pos = 0;
+        Models.Hist h = Prefs.findHist(this, type, id);
+        if (h != null && h.season == sn && h.episode == ep
+                && h.pos > 10 && (h.dur <= 0 || h.pos < h.dur - 15)) {
+            pos = h.pos;
+        }
+        Prefs.addHist(this, type, id, title, poster, origTitle, year, sn, ep,
+                pos, h == null ? 0 : h.dur, track);
+        PlayerActivity.start(this, type, id, sn, ep, title, origTitle, year,
+                track, prefSrc, epCount, poster, pos);
     }
 
     /** 创建 chip 按钮 */

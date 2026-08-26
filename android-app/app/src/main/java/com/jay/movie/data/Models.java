@@ -80,6 +80,9 @@ public class Models {
         public String year = "";
         public int season = 1;
         public int episode;             // 电影为 0
+        public long pos;                // 上次播放位置（秒）
+        public long dur;                // 总时长（秒）
+        public String track = "orig";   // 上次音轨
         public long ts;
 
         public static List<Hist> list(JSONArray a) {
@@ -96,6 +99,9 @@ public class Models {
                 h.year = o.optString("year", "");
                 h.season = o.optInt("season", 1);
                 h.episode = o.optInt("episode", 0);
+                h.pos = o.optLong("pos", 0);
+                h.dur = o.optLong("dur", 0);
+                h.track = o.optString("track", "orig");
                 h.ts = o.optLong("ts", 0);
                 l.add(h);
             }
