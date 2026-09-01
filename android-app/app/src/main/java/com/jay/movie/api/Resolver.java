@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -95,20 +96,41 @@ public class Resolver {
         return total + cur;
     }
 
-    /** 从片名提取季数：0=无标记 */
+    /** 罗马数字转阿拉伯（仅 I/V/X 简单组合） */
+    private static int romanToInt(String s) {
+        if (s == null || s.isEmpty()) return 0;
+        int total = 0;
+        for (int i = 0; i < s.length(); i++) {
+            int cur = s.charAt(i) == 'I' ? 1 : (s.charAt(i) == 'V' ? 5 : 10);
+            int next = i + 1 < s.length() ?
+                    (s.charAt(i + 1) == 'I' ? 1 : (s.charAt(i + 1) == 'V' ? 5 : 10)) : 0;
+            total += cur < next ? -cur : cur;
+        }
+        return total;
+    }
+
+    /** 从片名提取季数：0=无标记（兼容资源站各种命名：第2季/第二部/Season 2/S2/片名2/片名II） */
     private static int extractSeason(String name) {
-        Matcher m = Pattern.compile("第\\s*(\\d+)\\s*季").matcher(name);
+        if (name == null) return 0;
+        Matcher m = Pattern.compile("第\\s*(\\d+)\\s*[季部]").matcher(name);
         if (m.find()) return Integer.parseInt(m.group(1));
-        m = Pattern.compile("第\\s*([一二三四五六七八九十]+)\\s*季").matcher(name);
+        m = Pattern.compile("第\\s*([一二三四五六七八九十]+)\\s*[季部]").matcher(name);
         if (m.find()) return cnToInt(m.group(1));
-        m = Pattern.compile("第\\s*(\\d+)\\s*部").matcher(name);
+        m = Pattern.compile("(\\d{1,2})\\s*季").matcher(name);
         if (m.find()) return Integer.parseInt(m.group(1));
-        m = Pattern.compile("第\\s*([一二三四五六七八九十]+)\\s*部").matcher(name);
-        if (m.find()) return cnToInt(m.group(1));
         m = Pattern.compile("(?i)season\\s*(\\d+)").matcher(name);
         if (m.find()) return Integer.parseInt(m.group(1));
-        m = Pattern.compile("(?i)s(\\d{2})e\\d{2}").matcher(name);
+        m = Pattern.compile("(?i)s(\\d{1,2})\\s*e\\d{1,3}").matcher(name);
         if (m.find()) return Integer.parseInt(m.group(1));
+        // 单独的 S2 标记（前后不能是字母数字，避免误伤普通单词）
+        m = Pattern.compile("(?i)(?:^|[^a-z0-9])s(\\d{1,2})(?:$|[^a-z0-9])").matcher(name);
+        if (m.find()) return Integer.parseInt(m.group(1));
+        // 尾部裸数字：「某某剧2」（仅 1-2 位且前面是汉字/字母，排除年份和空格分隔的英文剧名）
+        m = Pattern.compile("[\\u4e00-\\u9fa5A-Za-z](\\d{1,2})$").matcher(name.trim());
+        if (m.find()) return Integer.parseInt(m.group(1));
+        // 尾部罗马数字：「某某剧II」「Show II」（前面须是汉字或空白，避免误判 FXX 这类词尾）
+        m = Pattern.compile("(?:[\\u4e00-\\u9fa5]|\\s)([IVX]{1,4})$").matcher(name.trim());
+        if (m.find()) return romanToInt(m.group(1));
         return 0;
     }
 
@@ -194,9 +216,16 @@ public class Resolver {
         return 0;
     }
 
-    private static Models.ResItem pickEpisode(List<Models.ResItem> items, int epNo) {
+    /** 按集数挑选播放地址（合集条目优先精确匹配 S{季}E{集} 格式集名） */
+    private static Models.ResItem pickEpisode(List<Models.ResItem> items, int epNo, int season) {
         if (items == null || items.isEmpty()) return null;
         if (epNo > 0) {
+            if (season > 0) {
+                String pat = "(?i)s0*" + season + "e0*" + epNo + "(?!\\d)";
+                for (Models.ResItem it : items) {
+                    if (Pattern.compile(pat).matcher(it.name).find()) return it;
+                }
+            }
             for (Models.ResItem it : items) {
                 if (epNumber(it.name) == epNo) return it;
             }
@@ -247,7 +276,7 @@ public class Resolver {
         if (isTv) {
             int sMark = extractSeason(vodName);
             if (season > 1) {
-                if (sMark == season) sc += 45;
+                if (sMark == season) sc += 50;
                 else if (sMark == 0) sc -= 35;
                 else sc -= 55;
                 if (targetYear > 0 && vy > 0) {
@@ -256,7 +285,8 @@ public class Resolver {
                     else if (d <= 2) sc += 5; else if (d > 5) sc -= 20;
                 }
             } else {
-                if (sMark == 0 || sMark == 1) sc += 25;
+                if (sMark == 1) sc += 40;       // 明确标记第1季的条目优先于无标记条目
+                else if (sMark == 0) sc += 25;
                 else sc -= 60;
                 if (targetYear > 0 && vy > 0 && Math.abs(vy - targetYear) > 4) sc -= 15;
             }
@@ -283,12 +313,22 @@ public class Resolver {
         notFound.found = false;
         notFound.msg = "播放源中未找到该片资源";
 
-        // 多关键词搜索（中文名 + 原名）
+        // 多关键词搜索（中文名 + 原名；第2季起追加季关键词，覆盖资源站按季分条收录）
         List<String> kws = new ArrayList<>();
         if (zhTitle != null && !zhTitle.isEmpty()) kws.add(zhTitle);
         if (origTitle != null && !origTitle.isEmpty() && !norm(origTitle).equals(norm(zhTitle))) kws.add(origTitle);
+        if (isTv && season > 1) {
+            if (zhTitle != null && !zhTitle.isEmpty()) {
+                kws.add(zhTitle + "第" + season + "季");
+                kws.add(zhTitle + season);
+            }
+            if (origTitle != null && !origTitle.isEmpty()) {
+                kws.add(origTitle + " season " + season);
+                kws.add(origTitle + " S" + season);
+            }
+        }
 
-        Map<String, JSONObject> uniq = new HashMap<>();  // vod_id 去重
+        Map<String, JSONObject> uniq = new LinkedHashMap<>();  // vod_id 去重（保持搜索命中顺序）
         for (String kw : kws) {
             for (JSONObject v : search(apiUrl, kw)) {
                 List<Models.ResItem> items = parsePlayUrl(v.optString("vod_play_url", ""));
@@ -403,7 +443,7 @@ public class Resolver {
         }
         r.entry = g.name;
 
-        Models.ResItem item = isTv ? pickEpisode(g.items, ep) : pickMovieTrack(g.items, dub);
+        Models.ResItem item = isTv ? pickEpisode(g.items, ep, season) : pickMovieTrack(g.items, dub);
         if (item == null) {
             r.msg = "未找到对应集数资源";
             return r;
